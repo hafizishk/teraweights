@@ -6,6 +6,10 @@
 
 begin;
 
+-- Supabase installs pgcrypto into the `extensions` schema, plain Postgres into
+-- `public`. Naming both keeps crypt()/gen_salt() resolvable on either.
+set local search_path = pg_temp, public, extensions;
+
 -- ---------------------------------------------------------------------------
 -- Reset
 -- ---------------------------------------------------------------------------
