@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BottomTabs } from "@/components/member/BottomTabs";
 import { Wordmark } from "@/components/ui/Wordmark";
+import { Toaster } from "@/components/ui/Toaster";
 import type { Profile } from "@/lib/types";
 
 export default async function MemberLayout({ children }: { children: React.ReactNode }) {
@@ -27,7 +28,9 @@ export default async function MemberLayout({ children }: { children: React.React
           </a>
         ) : null}
       </header>
-      <main className="flex-1 px-4 pb-24 pt-4">{children}</main>
+      <Toaster>
+        <main className="flex-1 px-4 pb-24 pt-4">{children}</main>
+      </Toaster>
       <BottomTabs />
     </div>
   );

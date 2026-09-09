@@ -24,4 +24,6 @@ psql "$CHECK_URL" -v ON_ERROR_STOP=1 -q -f supabase/seed.sql
 
 echo "assert: seed matches brief section 11"
 psql "$CHECK_URL" -v ON_ERROR_STOP=1 -q -f scripts/db-assert.sql
+echo "assert: booking, cancellation and waitlist behaviour"
+psql "$CHECK_URL" -v ON_ERROR_STOP=1 -q -f scripts/db-booking-test.sql
 echo "db:check OK"
