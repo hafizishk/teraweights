@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+/* Brand tokens — brief section 10 */
+@theme {
+  --color-ink: #0b0b0b;
+  --color-ink-2: #161616;
+  --color-ink-3: #222222;
+  --color-paper: #f4f1ec;
+  --color-paper-2: #e9e4dc;
+  --color-brand: #b11226;
+  --color-brand-2: #8d0e1e;
+  --color-muted: #8a8a8a;
+  --color-west: #2b6cb0;
+  --color-prime: #f2c230;
+
+  --font-display: var(--font-barlow), "Barlow Condensed", "Oswald", Impact, sans-serif;
+  --font-sans: var(--font-inter), Inter, system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+.display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+/* Mobile safe areas for the installed PWA */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Heartbeat divider motif — use sparingly */
+.heartbeat {
+  height: 12px;
+  background-repeat: repeat-x;
+  background-size: 120px 12px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='12' viewBox='0 0 120 12'><polyline points='0,6 40,6 46,6 50,1 55,11 60,3 64,6 120,6' fill='none' stroke='%23B11226' stroke-width='1.5'/></svg>");
+  opacity: 0.9;
+}

@@ -1,0 +1,140 @@
+-- Assertions that the seeded database matches brief section 11 and that RLS
+-- behaves per section 6. Runs after seed.sql in npm run db:check.
+
+create or replace function pg_temp.assert(cond boolean, msg text) returns void
+language plpgsql as $$
+begin
+  if not cond then raise exception 'ASSERT FAILED: %', msg; end if;
+end $$;
+
+create or replace function pg_temp.sgt(d date, t time) returns timestamptz
+language sql immutable as $$ select (d + t) at time zone 'Asia/Singapore' $$;
+
+do $$
+declare
+  aisyah uuid := 'a0000000-0000-4000-8000-000000000001';
+  n int;
+  t text;
+begin
+  perform pg_temp.assert((select count(*) from public.profiles) = 13, '12 members + admin');
+  perform pg_temp.assert((select role from public.profiles where email = 'admin@stackform.test') = 'admin', 'admin role');
+  perform pg_temp.assert((select role from public.profiles where email = 'faizal@teraweights.test') = 'coach', 'coach role');
+  perform pg_temp.assert((select full_name from public.profiles where id = aisyah) = 'Aisyah Rahman', 'demo member name');
+
+  perform pg_temp.assert((select count(*) from public.class_types) = 4, '4 class types');
+  perform pg_temp.assert((select count(*) from public.venues) = 6, '6 venues');
+  perform pg_temp.assert((select count(*) from public.packages) = 18, '18 packages');
+  perform pg_temp.assert((select price_sgd from public.packages where name = 'Energise Weekday 4-month') = 260, 'Weekday 4-month = 260');
+  perform pg_temp.assert((select validity_days from public.packages where name = 'Energise PRO 12-month') = 420, 'PRO 12-month validity 420');
+
+  -- September schedule
+  select count(*) into n from public.sessions s join public.class_types c on c.id = s.class_type_id
+   where c.slug = 'energise_east' and s.starts_at >= pg_temp.sgt('2026-09-01','00:00') and s.starts_at < pg_temp.sgt('2026-10-01','00:00');
+  perform pg_temp.assert(n = 17, 'East Sep: 4 Tue + 4 Thu + 4 Sat + 4 Sun + ... = 17, got ' || n);
+  select count(*) into n from public.sessions s join public.class_types c on c.id = s.class_type_id
+   where c.slug = 'fitness_engine';
+  perform pg_temp.assert(n = 6, 'FE has 6 sessions, got ' || n);
+  select count(*) into n from public.sessions s join public.class_types c on c.id = s.class_type_id
+   where c.slug = 'prime' and s.starts_at >= pg_temp.sgt('2026-09-01','00:00');
+  perform pg_temp.assert(n = 13, 'PRIME Sep: 4 Mon + 5 Wed + 4 Sun = 13, got ' || n);
+  perform pg_temp.assert(exists (select 1 from public.sessions where starts_at = pg_temp.sgt('2026-09-10','20:00')), 'Thu 10 Sep 8pm exists');
+  perform pg_temp.assert(exists (select 1 from public.sessions where starts_at = pg_temp.sgt('2026-09-15','20:00')), 'Tue 15 Sep 8pm exists');
+  perform pg_temp.assert(exists (select 1 from public.sessions where starts_at = pg_temp.sgt('2026-09-19','07:30')), 'Sat 19 Sep 7.30am exists');
+  perform pg_temp.assert(exists (select 1 from public.sessions s join public.class_types c on c.id = s.class_type_id where c.slug = 'prime' and starts_at = pg_temp.sgt('2026-09-14','18:00')), 'PRIME Mon 14 Sep exists');
+
+  -- Aisyah
+  perform pg_temp.assert((select count(*) from public.member_packages where member_id = aisyah and payment_status = 'paid' and expires_at > pg_temp.sgt('2026-09-09','12:00')) = 2, 'Aisyah has 2 active packages');
+  perform pg_temp.assert((select credits_remaining from public.member_packages where member_id = aisyah and kind = 'credits') = 6, 'Aisyah 6 credits');
+  perform pg_temp.assert((select (expires_at at time zone 'Asia/Singapore')::date from public.member_packages where member_id = aisyah and kind = 'membership') = date '2026-09-28', 'Aisyah membership expires 28 Sep');
+  perform pg_temp.assert((select (expires_at at time zone 'Asia/Singapore')::date from public.member_packages where member_id = aisyah and kind = 'credits') = date '2026-11-15', 'Aisyah credits expire 15 Nov');
+  perform pg_temp.assert((select count(*) from public.bookings where member_id = aisyah and status = 'attended') = 14, 'Aisyah attended 14');
+  perform pg_temp.assert(exists (select 1 from public.bookings b join public.sessions s on s.id = b.session_id where b.member_id = aisyah and b.status = 'booked' and s.starts_at = pg_temp.sgt('2026-09-10','20:00') and b.entitlement = 'membership'), 'Aisyah booked Thu 10 Sep');
+  perform pg_temp.assert(not exists (select 1 from public.event_registrations where member_id = aisyah and event_id = 'e0000000-0000-4000-8000-000000000001'), 'Aisyah not yet registered for PA.ROX Sep');
+  perform pg_temp.assert(not exists (select 1 from public.coach_assignments where member_id = aisyah), 'Aisyah has no coach');
+  select string_agg(total_seconds::text, ',' order by e.event_date) into t
+    from public.event_results r join public.events e on e.id = r.event_id where r.member_id = aisyah;
+  perform pg_temp.assert(t = '2892,2677,2465', 'Aisyah results 48:12, 44:37, 41:05 — got ' || t);
+  perform pg_temp.assert((select count(*) from public.event_results where station_splits is not null
+     and (select sum((s->>'seconds')::int) from jsonb_array_elements(station_splits) s) <> total_seconds) = 0, 'splits sum to total');
+
+  -- Marcus, Priya
+  perform pg_temp.assert(exists (select 1 from public.member_packages mp join public.packages p on p.id = mp.package_id where mp.member_id = 'a0000000-0000-4000-8000-000000000006' and p.tier = 'pro' and mp.payment_status = 'paid'), 'Marcus PRO');
+  perform pg_temp.assert((select count(*) from public.member_packages where member_id = 'a0000000-0000-4000-8000-000000000008' and expires_at > pg_temp.sgt('2026-09-09','12:00')) = 0, 'Priya has no active package');
+
+  -- Events, results, announcements
+  perform pg_temp.assert((select count(*) from public.events) = 6, '6 events');
+  perform pg_temp.assert((select count(*) from public.event_slots where event_id = 'e0000000-0000-4000-8000-000000000001') = 3, 'PA.ROX Sep 3 waves');
+  select count(*) into n from public.event_results group by event_id having count(*) < 10 or count(*) > 15;
+  perform pg_temp.assert(n is null, 'results 10–15 per event');
+  perform pg_temp.assert((select count(*) from public.event_results where member_id is null) > 0, 'unmatched guests in results');
+  perform pg_temp.assert((select count(*) from public.announcements where published_at is not null) = 3, '3 published announcements');
+
+  -- Full session with waitlist
+  select count(*) into n from public.bookings b join public.sessions s on s.id = b.session_id
+   where s.starts_at = pg_temp.sgt('2026-09-13','07:30') and b.status = 'booked';
+  perform pg_temp.assert(n = (select capacity from public.sessions where starts_at = pg_temp.sgt('2026-09-13','07:30')), 'Sun 13 Sep is full');
+  perform pg_temp.assert(exists (select 1 from public.bookings b join public.sessions s on s.id = b.session_id where s.starts_at = pg_temp.sgt('2026-09-13','07:30') and b.status = 'waitlisted'), 'Sun 13 Sep has waitlist');
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- RLS smoke tests
+-- ---------------------------------------------------------------------------
+create or replace function pg_temp.as_user(uid uuid) returns void
+language plpgsql as $$
+begin
+  perform set_config('request.jwt.claim.sub', coalesce(uid::text, ''), true);
+  perform set_config('request.jwt.claim.role', case when uid is null then 'anon' else 'authenticated' end, true);
+end $$;
+
+do $$
+declare
+  aisyah uuid := 'a0000000-0000-4000-8000-000000000001';
+  priya  uuid := 'a0000000-0000-4000-8000-000000000008';
+  faizal uuid := 'a0000000-0000-4000-8000-000000000003';
+  n int;
+begin
+  -- Aisyah (member)
+  perform pg_temp.as_user(aisyah);
+  set local role authenticated;
+  perform pg_temp.assert((select count(*) from public.member_packages) = 2, 'RLS: Aisyah sees only her 2 packages');
+  perform pg_temp.assert((select count(*) from public.bookings where member_id <> aisyah) = 0, 'RLS: Aisyah sees no other bookings');
+  perform pg_temp.assert((select count(*) from public.profiles where id = priya) = 0, 'RLS: Aisyah cannot read Priya');
+  perform pg_temp.assert((select count(*) from public.profiles where id = faizal) = 1, 'RLS: Aisyah can read coach display row');
+  perform pg_temp.assert((select count(*) from public.event_results where event_id = 'e0000000-0000-4000-8000-000000000006') = 14, 'RLS: Aisyah sees Apr 2026 leaderboard');
+  perform pg_temp.assert((select count(*) from public.announcements) = 3, 'RLS: published announcements visible');
+  perform pg_temp.assert((select count(*) from public.sessions) > 0, 'RLS: sessions readable');
+  perform pg_temp.assert((select count(*) from public.admin_allowlist) = 0, 'RLS: allowlist hidden from members');
+  begin
+    update public.profiles set role = 'admin' where id = aisyah;
+    raise exception 'RLS: member escalated own role';
+  exception when check_violation or insufficient_privilege then
+    null;
+  end;
+  reset role;
+
+  -- Priya (member with no results in Jul 2025)
+  perform pg_temp.as_user(priya);
+  set local role authenticated;
+  perform pg_temp.assert((select count(*) from public.event_results where event_id = 'e0000000-0000-4000-8000-000000000005') = 0, 'RLS: Priya cannot see Jul 2025 leaderboard');
+  perform pg_temp.assert((select count(*) from public.event_results where event_id = 'e0000000-0000-4000-8000-000000000004') = 14, 'RLS: Priya sees KG Aug leaderboard');
+  reset role;
+
+  -- Faizal (coach)
+  perform pg_temp.as_user(faizal);
+  set local role authenticated;
+  perform pg_temp.assert((select count(*) from public.bookings b join public.sessions s on s.id = b.session_id where s.starts_at = pg_temp.sgt('2026-09-10','20:00')) = 5, 'RLS: coach sees Thu 10 Sep roster');
+  perform pg_temp.assert((select count(*) from public.profiles where id = aisyah) = 1, 'RLS: coach reads member in his session');
+  perform pg_temp.assert((select count(*) from public.member_packages) = 0, 'RLS: coach cannot read packages');
+  perform pg_temp.assert(public.is_staff(), 'is_staff for coach');
+  perform pg_temp.assert(not public.is_admin(), 'coach is not admin');
+  reset role;
+
+  -- Anonymous
+  perform pg_temp.as_user(null);
+  set local role anon;
+  perform pg_temp.assert((select count(*) from public.events) = 6, 'RLS: anon sees public events');
+  perform pg_temp.assert((select count(*) from public.sessions) > 0, 'RLS: anon reads sessions');
+  perform pg_temp.assert((select count(*) from public.packages) = 18, 'RLS: anon reads packages');
+  perform pg_temp.assert((select count(*) from public.event_registrations) = 0, 'RLS: anon sees no registrations');
+  reset role;
+end $$;

@@ -1,0 +1,61 @@
+# CLAUDE.md — Teraweights App
+
+Read `docs/teraweights-build-brief.md` before doing anything. It is the spec. Sections referenced below are from that file.
+
+## What this is
+Member PWA + admin portal for Teraweights, a Singapore outdoor fitness community. One week to a demoable test build. Working software over polish, but it must look like a real product in the demo.
+
+## Stack (do not deviate)
+- Next.js 15 App Router, TypeScript strict, Tailwind
+- Supabase: Postgres, Auth (email OTP), RLS on every table, Storage for images
+- `@supabase/ssr` for server/client helpers. Server actions for all writes.
+- PWA: manifest + service worker. Mobile-first member app at `/app/*`, desktop admin at `/admin/*`.
+- Deploy: Vercel.
+
+## Structure
+```
+app/
+  (auth)/login
+  app/            # member: home, book, events, parox, profile
+  admin/          # admin + coach
+  api/            # only where server actions can't work (CSV import, QR validate)
+components/
+  ui/             # shared primitives
+  member/
+  admin/
+lib/
+  supabase/       # server.ts, client.ts, admin.ts (service role, server only)
+  actions/        # bookings.ts, events.ts, members.ts, results.ts, announcements.ts
+  rules/          # credits.ts, waitlist.ts, checkin.ts — pure functions, unit-testable
+supabase/
+  migrations/
+  seed.sql
+docs/
+  teraweights-build-brief.md
+```
+
+## Roles
+`member` | `coach` | `admin` on `profiles.role`. Middleware gates `/app` (any authenticated) and `/admin` (coach or admin). RLS is the real guard — never rely on middleware alone. Service role key only in `lib/supabase/admin.ts`, only used server-side for guest event registration and CSV import.
+
+## Business rules live in `lib/rules/`
+Credits, waitlist promotion, cancellation cutoffs, check-in validation, streak calc — pure functions with no Supabase calls, called from server actions. See brief section 7. If you change a rule, change it there and nowhere else.
+
+## Seed data is sacred
+`supabase/seed.sql` implements brief section 11 exactly. Demo member is Aisyah Rahman. Do not invent different names, dates, or times — the demo script depends on them. `npm run db:reset` must reset and reseed cleanly.
+
+## Design
+Brief section 10. Black base, off-white surfaces, red `#B11226` accent. Barlow Condensed headings, Inter body. Members are "Energisers". Class badge colours: East red, West blue, PRIME yellow, Fitness Engine outline. Keep copy short. No emoji in UI chrome.
+
+## Conventions
+- Dates: store UTC, display Asia/Singapore. Use `date-fns-tz`.
+- Money: `numeric` in SGD, display `S$58`.
+- Times in results: store seconds, display `mm:ss`.
+- Every list has an empty state. Every action has a loading state and an error toast.
+- No `localStorage` for app state.
+- Commit after every session with a message naming the session number.
+
+## Out of scope — do not build
+Payments gateway, push notifications, chat/feed, PT booking or programming, MyZone, public marketing site, native builds, i18n.
+
+## When unsure
+Prefer the brief. If the brief is silent, choose the simplest thing that keeps the demo script (section 13) working, and note the decision in `docs/DECISIONS.md`.
