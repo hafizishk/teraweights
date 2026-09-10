@@ -265,9 +265,14 @@ values
   ('Energise X',            'credits',    'energise', null, null, 90, 10, 180, null, array['energise_east', 'energise_west'], 0, true,  array['10 sessions, valid 3 months']),
   ('Energise + (Drop-in)',  'dropin',     'energise', null, null, 1,  1,  20,  null, array['energise_east', 'energise_west'], 0, false, array['Single session']);
 
-update public.packages set description = case kind
-  when 'membership' then 'Unlimited sessions for the term.'
-  when 'credits' then '10 credits, valid 90 days.'
+-- Free trial week (scope change, 10 Sep 2026): one per Energiser, ever.
+insert into public.packages (name, kind, tier, variant, term_months, validity_days, credits, price_sgd, price_per_month, allowed_class_types, fe_credits_included, cashback_eligible, perks, is_trial)
+values ('Trial Week', 'membership', 'energise', null, null, 7, null, 0, null, array['energise_east', 'energise_west'], 0, false, array['Any Energise East or West session for 7 days', 'One per Energiser'], true);
+
+update public.packages set description = case
+  when is_trial then 'Seven days of Energise East and West, on us.'
+  when kind = 'membership' then 'Unlimited sessions for the term.'
+  when kind = 'credits' then '10 credits, valid 90 days.'
   else 'One session, valid on the day.' end;
 
 -- ---------------------------------------------------------------------------

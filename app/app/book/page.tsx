@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { getActivePackages } from "@/lib/queries/packages";
+import { getActivePackages, getMemberPackages } from "@/lib/queries/packages";
+import { trialEligibility } from "@/lib/rules/trial";
 import { getMyBookings, getSessionCounts, getSessionsBetween } from "@/lib/queries/sessions";
 import { buildSessionView } from "@/lib/view/session-view";
 import { weekOf } from "@/lib/week";
@@ -34,11 +35,13 @@ export default async function BookPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [sessions, counts, packages] = await Promise.all([
+  const [sessions, counts, packages, allPackages] = await Promise.all([
     getSessionsBetween(supabase, week.startIso, week.endIso),
     getSessionCounts(supabase, week.startIso, week.endIso),
     getActivePackages(supabase, user!.id),
+    getMemberPackages(supabase, user!.id),
   ]);
+  const trial = trialEligibility(allPackages, now);
 
   const bookings = await getMyBookings(
     supabase,
@@ -58,6 +61,7 @@ export default async function BookPage({
       filters={FILTERS.map(({ key, label }) => ({ key, label }))}
       filterKey={filterKey}
       openSessionId={s ?? null}
+      trialEligible={trial.eligible}
     />
   );
 }

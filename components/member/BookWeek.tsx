@@ -16,6 +16,7 @@ export function BookWeek({
   filters,
   filterKey,
   openSessionId,
+  trialEligible = false,
 }: {
   views: SessionView[];
   week: Week;
@@ -23,6 +24,7 @@ export function BookWeek({
   filters: { key: string; label: string }[];
   filterKey: string;
   openSessionId: string | null;
+  trialEligible?: boolean;
 }) {
   const pathname = usePathname();
   const params = useSearchParams();
@@ -157,7 +159,7 @@ export function BookWeek({
         </div>
       )}
 
-      {open ? <SessionSheet view={open} onClose={() => setOpenId(null)} /> : null}
+      {open ? <SessionSheet view={open} onClose={() => setOpenId(null)} trialEligible={trialEligible} /> : null}
     </div>
   );
 }

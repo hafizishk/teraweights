@@ -3,13 +3,22 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { StartTrialButton } from "@/components/member/StartTrialButton";
 import { ClassBadge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toaster";
 import { bookSession, cancelBooking, joinWaitlist } from "@/lib/actions/bookings";
 import { formatDay, formatTime } from "@/lib/format";
 import type { SessionView } from "@/lib/view/session-view";
 
-export function SessionSheet({ view, onClose }: { view: SessionView; onClose: () => void }) {
+export function SessionSheet({
+  view,
+  onClose,
+  trialEligible = false,
+}: {
+  view: SessionView;
+  onClose: () => void;
+  trialEligible?: boolean;
+}) {
   const router = useRouter();
   const toast = useToast();
   const [pending, startTransition] = useTransition();
@@ -130,6 +139,7 @@ export function SessionSheet({ view, onClose }: { view: SessionView; onClose: ()
           ) : null}
 
           <div className="flex flex-col gap-2">
+            {view.action === "blocked" && trialEligible ? <StartTrialButton onDone={onClose} /> : null}
             <Button
               onClick={onPrimary}
               loading={pending}

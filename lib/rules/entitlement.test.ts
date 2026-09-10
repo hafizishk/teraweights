@@ -112,6 +112,26 @@ describe("resolveEntitlement — the demo script (section 13, step 2)", () => {
   });
 });
 
+describe("resolveEntitlement — trial week", () => {
+  const TRIAL = pkg({
+    id: "t1",
+    package_name: "Trial Week",
+    variant: null,
+    expires_at: "2026-09-17T04:00:00Z",
+  });
+
+  it("covers weekday and weekend Energise sessions", () => {
+    expect(resolveEntitlement(TUE_EAST_8PM, [TRIAL], NOW).kind).toBe("membership");
+    expect(resolveEntitlement(SAT_EAST_730AM, [TRIAL], NOW).kind).toBe("membership");
+    expect(resolveEntitlement(WED_WEST_8PM, [TRIAL], NOW).kind).toBe("membership");
+  });
+
+  it("does not unlock PRIME or Fitness Engine", () => {
+    expect(resolveEntitlement(MON_PRIME_6PM, [TRIAL], NOW).kind).toBe("blocked");
+    expect(resolveEntitlement(WED_FE_730PM, [TRIAL], NOW).kind).toBe("blocked");
+  });
+});
+
 describe("resolveEntitlement — blocked states", () => {
   it("blocks a member with no packages", () => {
     const r = resolveEntitlement(TUE_EAST_8PM, [], NOW);

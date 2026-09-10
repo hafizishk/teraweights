@@ -38,7 +38,18 @@ docs/
 `member` | `coach` | `admin` on `profiles.role`. Middleware gates `/app` (any authenticated) and `/admin` (coach or admin). RLS is the real guard — never rely on middleware alone. Service role key only in `lib/supabase/admin.ts`, only used server-side for guest event registration and CSV import.
 
 ## Business rules live in `lib/rules/`
-Credits, waitlist promotion, cancellation cutoffs, check-in validation, streak calc — pure functions with no Supabase calls, called from server actions. See brief section 7. If you change a rule, change it there and nowhere else.
+Credits, waitlist promotion, cancellation cutoffs, check-in validation, streak calc, trial eligibility — pure functions with no Supabase calls, called from server actions. See brief section 7. If you change a rule, change it there and nowhere else.
+
+## Scope changes since the brief
+Agreed with Stackform on 10 Sep 2026. Details and reasoning in `docs/DECISIONS.md`.
+- **Free trial week.** A `Trial Week` package: 7 days, S$0, Energise East and West, one per member ever. Self-serve from the "no active package" state. Entitlement, booking and expiry treat it as any other membership.
+- **Payments.** Stripe Checkout for one-off package purchases (PayNow, GrabPay, Google Pay, Apple Pay, cards). Built after the admin portal; webhook marks `member_packages` paid. Auto-renewing subscriptions are a later step. Admin "record payment" stays as the fallback for cash and legacy members. Needs a Stripe account in Teraweights' name; test mode until then.
+- **Onboarding.** Three questions on first sign-in: zone, days per week, preferred time. Feeds `zone_pref`, the streak ring's weekly target and Book's default sort. Built with Profile in Session 4.
+- **Packages copy.** Every package shows what it gets you in sessions ("10 credits, about five weeks at twice a week"), not just a price.
+- **Credits pill** in the member header on every screen.
+- **Profile photo.** Optional upload to a Supabase Storage `avatars` bucket, `profiles.avatar_url`. The initials avatar shows the photo wherever a member appears. Built with Profile in Session 4.
+- **Session sheet** gets a duotone photo header and a two-line "what to expect" per class type.
+- **Not taken from ClassPass:** ratings and reviews, save/share on venues, marketing carousels before onboarding, wallet-only integrations without a processor.
 
 ## Seed data is sacred
 `supabase/seed.sql` implements brief section 11 exactly. Demo member is Aisyah Rahman. Do not invent different names, dates, or times — the demo script depends on them. `npm run db:reset` must reset and reseed cleanly.
@@ -55,7 +66,7 @@ Brief section 10. Black base, off-white surfaces, red `#B11226` accent. Barlow C
 - Commit after every session with a message naming the session number.
 
 ## Out of scope — do not build
-Payments gateway, push notifications, chat/feed, PT booking or programming, MyZone, public marketing site, native builds, i18n.
+Auto-renewing subscriptions (for now), push notifications, chat/feed, ratings/reviews, PT booking or programming, MyZone, public marketing site, native builds, i18n.
 
 ## When unsure
 Prefer the brief. If the brief is silent, choose the simplest thing that keeps the demo script (section 13) working, and note the decision in `docs/DECISIONS.md`.

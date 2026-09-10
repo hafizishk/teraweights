@@ -10,6 +10,7 @@ type PackageJoin = {
   payment_status: "pending" | "paid";
   expires_at: string;
   purchased_at: string;
+  is_trial: boolean;
   packages: {
     name: string;
     tier: MemberPackage["tier"];
@@ -22,6 +23,7 @@ type PackageJoin = {
 };
 
 export type MemberPackageRow = MemberPackage & {
+  is_trial: boolean;
   credits_total: number | null;
   term_months: number | null;
   perks: string[];
@@ -30,7 +32,7 @@ export type MemberPackageRow = MemberPackage & {
 };
 
 const SELECT =
-  "id, kind, credits_total, credits_remaining, fe_credits_remaining, payment_status, expires_at, purchased_at, " +
+  "id, kind, credits_total, credits_remaining, fe_credits_remaining, payment_status, expires_at, purchased_at, is_trial, " +
   "packages(name, tier, variant, allowed_class_types, term_months, perks, cashback_eligible)";
 
 function toRow(r: PackageJoin): MemberPackageRow {
@@ -46,6 +48,7 @@ function toRow(r: PackageJoin): MemberPackageRow {
     fe_credits_remaining: r.fe_credits_remaining,
     payment_status: r.payment_status,
     expires_at: r.expires_at,
+    is_trial: r.is_trial,
     term_months: r.packages?.term_months ?? null,
     perks: r.packages?.perks ?? [],
     cashback_eligible: r.packages?.cashback_eligible ?? false,

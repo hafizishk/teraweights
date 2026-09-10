@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { StartTrialButton } from "@/components/member/StartTrialButton";
 import { formatDate } from "@/lib/format";
+import { TRIAL_DAYS } from "@/lib/rules/trial";
 import type { MemberPackageRow } from "@/lib/queries/packages";
 
 function daysLeft(expiresAt: string, now = new Date()): number {
@@ -7,13 +9,32 @@ function daysLeft(expiresAt: string, now = new Date()): number {
 }
 
 /** One slim line for the member's packages; the full breakdown lives in Profile. */
-export function MembershipBar({ packages }: { packages: MemberPackageRow[] }) {
+export function MembershipBar({
+  packages,
+  trialEligible = false,
+}: {
+  packages: MemberPackageRow[];
+  trialEligible?: boolean;
+}) {
   const membership = packages.find((p) => p.kind === "membership");
   const credits = packages
     .filter((p) => p.kind === "credits" || p.kind === "dropin")
     .reduce((n, p) => n + (p.credits_remaining ?? 0), 0);
 
   if (!membership && credits === 0) {
+    if (trialEligible) {
+      return (
+        <div className="flex flex-col gap-3 rounded-lg border border-brand/40 bg-brand/10 p-4">
+          <div className="flex flex-col gap-1">
+            <span className="display text-xl leading-tight">Try a week on us</span>
+            <span className="text-sm text-muted">
+              {TRIAL_DAYS} days of Energise East and West, any session. No card, no catch.
+            </span>
+          </div>
+          <StartTrialButton />
+        </div>
+      );
+    }
     return (
       <Link
         href="/app/profile"
@@ -37,15 +58,19 @@ export function MembershipBar({ packages }: { packages: MemberPackageRow[] }) {
   }
   if (credits > 0) parts.push(`${credits} ${credits === 1 ? "credit" : "credits"}`);
 
+  const title = membership
+    ? membership.is_trial
+      ? "Free week"
+      : membership.package_name.replace(/\s\d+-month$/, "")
+    : "Credits";
+
   return (
     <Link
       href="/app/profile"
       className="flex items-center justify-between rounded-lg border border-ink-3 px-4 py-3 hover:border-muted"
     >
       <span className="flex flex-col gap-0.5">
-        <span className="display text-base leading-tight">
-          {membership ? membership.package_name.replace(/\s\d+-month$/, "") : "Credits"}
-        </span>
+        <span className="display text-base leading-tight">{title}</span>
         <span className="text-xs text-muted">{parts.join(" · ")}</span>
       </span>
       <span className="text-xs text-muted underline underline-offset-4">Details</span>

@@ -23,7 +23,7 @@ begin
 
   perform pg_temp.assert((select count(*) from public.class_types) = 4, '4 class types');
   perform pg_temp.assert((select count(*) from public.venues) = 6, '6 venues');
-  perform pg_temp.assert((select count(*) from public.packages) = 18, '18 packages');
+  perform pg_temp.assert((select count(*) from public.packages) = 19, '18 packages + trial');
   perform pg_temp.assert((select price_sgd from public.packages where name = 'Energise Weekday 4-month') = 260, 'Weekday 4-month = 260');
   perform pg_temp.assert((select validity_days from public.packages where name = 'Energise PRO 12-month') = 420, 'PRO 12-month validity 420');
 
@@ -134,7 +134,7 @@ begin
   set local role anon;
   perform pg_temp.assert((select count(*) from public.events) = 6, 'RLS: anon sees public events');
   perform pg_temp.assert((select count(*) from public.sessions) > 0, 'RLS: anon reads sessions');
-  perform pg_temp.assert((select count(*) from public.packages) = 18, 'RLS: anon reads packages');
+  perform pg_temp.assert((select count(*) from public.packages) = 19, 'RLS: anon reads packages');
   perform pg_temp.assert((select count(*) from public.event_registrations) = 0, 'RLS: anon sees no registrations');
   reset role;
 end $$;
@@ -179,4 +179,48 @@ begin
   perform pg_temp.assert((select trained_this_week from public.community_pulse()) >= 0, 'pulse readable by members');
   perform pg_temp.assert((select sessions_left_this_week from public.community_pulse()) >= 0, 'sessions left readable');
   reset role;
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- Free trial week (0004)
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  aisyah uuid := 'a0000000-0000-4000-8000-000000000001';
+  priya  uuid := 'a0000000-0000-4000-8000-000000000008';
+  v_id uuid;
+begin
+  perform pg_temp.assert((select count(*) from public.packages where is_trial) = 1, 'one trial package');
+  perform pg_temp.assert((select price_sgd from public.packages where is_trial) = 0, 'trial is free');
+
+  -- Priya (expired membership) can start one.
+  perform pg_temp.as_user(priya);
+  set local role authenticated;
+  select public.start_trial() into v_id;
+  perform pg_temp.assert(v_id is not null, 'Priya starts a trial');
+  perform pg_temp.assert((select count(*) from public.member_packages where member_id = priya and is_trial and payment_status = 'paid' and expires_at > now()) = 1, 'trial is active and paid');
+  perform pg_temp.assert((select (expires_at - starts_at) from public.member_packages where id = v_id) = interval '7 days', 'trial lasts 7 days');
+
+  -- Only once.
+  begin
+    perform public.start_trial();
+    raise exception 'second trial was allowed';
+  exception when raise_exception then
+    perform pg_temp.assert(sqlerrm like '%already used%', 'second trial refused, got: ' || sqlerrm);
+  end;
+  reset role;
+
+  -- Aisyah (active membership) cannot.
+  perform pg_temp.as_user(aisyah);
+  set local role authenticated;
+  begin
+    perform public.start_trial();
+    raise exception 'trial allowed alongside an active membership';
+  exception when raise_exception then
+    perform pg_temp.assert(sqlerrm like '%active membership%', 'active membership blocks trial, got: ' || sqlerrm);
+  end;
+  reset role;
+
+  -- Leave the seed as the demo expects: Priya has no active package.
+  delete from public.member_packages where id = v_id;
 end $$;

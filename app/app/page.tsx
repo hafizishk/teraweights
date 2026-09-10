@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { getActivePackages } from "@/lib/queries/packages";
+import { getActivePackages, getMemberPackages } from "@/lib/queries/packages";
+import { trialEligibility } from "@/lib/rules/trial";
 import { getMyBookings, getSession, getSessionCounts, getSessionsBetween } from "@/lib/queries/sessions";
 import { attendeeLine, getAttendees, getCommunityPulse } from "@/lib/queries/community";
 import { buildSessionView } from "@/lib/view/session-view";
@@ -41,14 +42,16 @@ export default async function HomePage() {
   const now = new Date();
   const week = weekOf(now);
 
-  const [{ data: profile }, packages, pulse, weekSessions, weekCounts] = await Promise.all([
+  const [{ data: profile }, packages, allPackages, pulse, weekSessions, weekCounts] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", uid).maybeSingle<Profile>(),
     getActivePackages(supabase, uid),
+    getMemberPackages(supabase, uid),
     getCommunityPulse(supabase),
     getSessionsBetween(supabase, week.startIso, week.endIso),
     getSessionCounts(supabase, week.startIso, week.endIso),
   ]);
   const hasPro = packages.some((p) => p.tier === "pro");
+  const trial = trialEligibility(allPackages, now);
 
   // The member's live bookings: the next one is the hero, attended ones feed the streak.
   const { data: bookingRows } = await supabase
@@ -191,7 +194,7 @@ export default async function HomePage() {
         </Card>
       ) : null}
 
-      <MembershipBar packages={packages} />
+      <MembershipBar packages={packages} trialEligible={trial.eligible} />
     </div>
   );
 }
