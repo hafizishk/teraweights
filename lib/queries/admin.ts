@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { BookingStatus, ClassSlug, PreferredTime, Role, Zone } from "@/lib/types";
+import { STAFF_ROLES, type BookingStatus, type ClassSlug, type PreferredTime, type Role, type Zone } from "@/lib/types";
 
 /**
  * Reads for the admin portal. Every one runs as the signed-in staff member, so
@@ -87,11 +87,12 @@ export type MemberRow = {
   weekly_target: number;
   preferred_time: PreferredTime | null;
   onboarded_at: string | null;
+  staff_title: string | null;
   created_at: string;
 };
 
 const MEMBER_COLUMNS =
-  "id, full_name, email, phone, role, zone_pref, avatar_url, weekly_target, preferred_time, onboarded_at, created_at";
+  "id, full_name, email, phone, role, zone_pref, avatar_url, weekly_target, preferred_time, onboarded_at, staff_title, created_at";
 
 /** All profiles, newest first, optionally filtered by a name or email fragment. */
 export async function getMembers(supabase: SupabaseClient, search?: string): Promise<MemberRow[]> {
@@ -112,14 +113,42 @@ export async function getMember(supabase: SupabaseClient, id: string): Promise<M
   return (data as MemberRow) ?? null;
 }
 
-/** Coaches and admins, for the "assign coach" and "coach" pickers. */
+/** Everyone who can reach /admin, for the staff directory and coach pickers. */
 export async function getStaff(supabase: SupabaseClient): Promise<MemberRow[]> {
+  const { data } = await supabase
+    .from("profiles")
+    .select(MEMBER_COLUMNS)
+    .in("role", STAFF_ROLES)
+    .order("full_name", { ascending: true });
+  return (data ?? []) as MemberRow[];
+}
+
+/** Only those who run sessions, for "assign coach" and the session coach picker. */
+export async function getCoaches(supabase: SupabaseClient): Promise<MemberRow[]> {
   const { data } = await supabase
     .from("profiles")
     .select(MEMBER_COLUMNS)
     .in("role", ["coach", "admin"])
     .order("full_name", { ascending: true });
   return (data ?? []) as MemberRow[];
+}
+
+export type AllowlistRow = { email: string; role: Role; created_at: string };
+
+/**
+ * Staff invited by email who have not signed in yet. handle_new_user() reads
+ * this table on first sign-in and stamps the role onto the new profile.
+ */
+export async function getStaffInvites(supabase: SupabaseClient): Promise<AllowlistRow[]> {
+  const [{ data: allowed }, { data: existing }] = await Promise.all([
+    supabase.from("admin_allowlist").select("email, role, created_at").order("created_at", { ascending: false }),
+    supabase.from("profiles").select("email"),
+  ]);
+
+  const claimed = new Set(
+    ((existing ?? []) as { email: string | null }[]).map((p) => (p.email ?? "").toLowerCase()).filter(Boolean),
+  );
+  return ((allowed ?? []) as AllowlistRow[]).filter((a) => !claimed.has(a.email.toLowerCase()));
 }
 
 export type MemberBooking = {

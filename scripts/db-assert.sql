@@ -452,3 +452,45 @@ begin
 
   raise notice 'admin portal assertions OK';
 end $$;
+
+-- ---------------------------------------------------------------------------
+-- 0008 — staff: the event assistant sees registrations and nothing else.
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  helper uuid := 'a0000000-0000-4000-8000-000000000002'; -- Nur, promoted for this test
+  parox uuid := 'e0000000-0000-4000-8000-000000000001';
+  n int;
+begin
+  update public.profiles set role = 'event_assistant', staff_title = 'Event Assistant' where id = helper;
+
+  perform pg_temp.as_user(helper);
+  set local role authenticated;
+  perform pg_temp.assert(public.is_staff(), 'assistant counts as staff');
+  perform pg_temp.assert(public.is_event_staff(), 'assistant is event staff');
+  perform pg_temp.assert(not public.is_admin(), 'assistant is not admin');
+
+  select count(*) into n from public.event_registrations where event_id = parox;
+  perform pg_temp.assert(n > 0, 'assistant reads registrations, got ' || n);
+
+  -- Names on the list are readable; the member directory is not.
+  select count(*) into n from public.profiles p
+   where exists (select 1 from public.event_registrations r where r.member_id = p.id);
+  perform pg_temp.assert(n > 0, 'assistant reads registrant names');
+  select count(*) into n from public.profiles p where p.role = 'member'
+     and not exists (select 1 from public.event_registrations r where r.member_id = p.id);
+  perform pg_temp.assert(n = 0, 'assistant cannot see members with no registration, saw ' || n);
+
+  -- Money and credits stay out of reach.
+  select count(*) into n from public.member_packages where member_id <> helper;
+  perform pg_temp.assert(n = 0, 'assistant sees nobody else''s packages');
+  begin
+    insert into public.events (slug, name, type, event_date) values ('nope', 'Nope', 'community', '2027-01-01');
+    raise exception 'assistant created an event';
+  exception when insufficient_privilege or check_violation then null;
+  end;
+  reset role;
+
+  update public.profiles set role = 'member', staff_title = null where id = helper;
+  raise notice 'staff assertions OK';
+end $$;

@@ -26,9 +26,12 @@ const paymentLabels: Record<EventRegistrationRow["payment_status"], string> = {
 export function RegistrationsTable({
   slug,
   registrations,
+  canExport = true,
 }: {
   slug: string;
   registrations: EventRegistrationRow[];
+  /** The CSV export is admin-only; the route refuses anyone else. */
+  canExport?: boolean;
 }) {
   const [term, setTerm] = useState("");
 
@@ -54,13 +57,15 @@ export function RegistrationsTable({
         <span className="text-xs text-muted">
           {rows.length} of {registrations.length}
         </span>
-        <a
-          href={`/api/admin/registrations?event=${encodeURIComponent(slug)}`}
-          download
-          className="ml-auto inline-flex h-10 items-center whitespace-nowrap rounded-md border border-ink-3 px-4 text-xs text-paper transition-colors hover:border-muted"
-        >
-          Export CSV
-        </a>
+        {canExport ? (
+          <a
+            href={`/api/admin/registrations?event=${encodeURIComponent(slug)}`}
+            download
+            className="ml-auto inline-flex h-10 items-center whitespace-nowrap rounded-md border border-ink-3 px-4 text-xs text-paper transition-colors hover:border-muted"
+          >
+            Export CSV
+          </a>
+        ) : null}
       </div>
 
       <Table>

@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getSession } from "@/lib/queries/sessions";
-import { getRoster, getRosterCounts, getStaff } from "@/lib/queries/admin";
+import { getRoster, getRosterCounts, getCoaches } from "@/lib/queries/admin";
 import { PageHeader, StatCard } from "@/components/admin/PageHeader";
 import { Table, Th, Td, Tr, EmptyRow } from "@/components/admin/Table";
 import { ActionButton } from "@/components/admin/ActionButton";
@@ -50,7 +50,7 @@ export default async function RosterPage({ params }: { params: Promise<{ id: str
   const [roster, counts, staff] = await Promise.all([
     getRoster(supabase, id),
     getRosterCounts(supabase, id),
-    isAdmin ? getStaff(supabase) : Promise.resolve([]),
+    isAdmin ? getCoaches(supabase) : Promise.resolve([]),
   ]);
 
   const coaches: Option[] = staff.map((s) => ({ id: s.id, name: s.full_name ?? s.email ?? "Coach" }));

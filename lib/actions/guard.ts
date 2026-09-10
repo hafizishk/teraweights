@@ -2,7 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import { isStaff, type Role } from "@/lib/types";
+import { isEventStaff, isStaff, type Role } from "@/lib/types";
 
 /**
  * Role gate for admin server actions.
@@ -15,7 +15,7 @@ export type Guarded =
   | { ok: true; supabase: SupabaseClient; userId: string; role: Role }
   | { ok: false; error: string };
 
-async function guard(minimum: "staff" | "admin"): Promise<Guarded> {
+async function guard(minimum: "staff" | "event" | "admin"): Promise<Guarded> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -26,11 +26,13 @@ async function guard(minimum: "staff" | "admin"): Promise<Guarded> {
   const role = data?.role;
   if (!role || !isStaff(role)) return { ok: false, error: "Admins and coaches only." };
   if (minimum === "admin" && role !== "admin") return { ok: false, error: "Admins only." };
+  if (minimum === "event" && !isEventStaff(role)) return { ok: false, error: "Event staff only." };
 
   return { ok: true, supabase, userId: user.id, role };
 }
 
 export const requireStaff = () => guard("staff");
+export const requireEventStaff = () => guard("event");
 export const requireAdmin = () => guard("admin");
 
 /** Postgres RAISE messages in these functions are written to be shown. */

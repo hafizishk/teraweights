@@ -9,6 +9,7 @@ import { ResultsImport } from "@/components/admin/ResultsImport";
 import { SlotsEditor } from "@/components/admin/SlotsEditor";
 import { CardTitle } from "@/components/ui/Card";
 import { formatEventDate } from "@/lib/format";
+import type { Role } from "@/lib/types";
 
 export const metadata = { title: "Event" };
 
@@ -28,6 +29,16 @@ export default async function AdminEventPage({ params }: { params: Promise<{ slu
   const { slug } = await params;
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: me } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user!.id)
+    .maybeSingle<{ role: Role }>();
+  const isAdmin = me?.role === "admin";
+
   const event = await getEventBySlug(supabase, slug);
   if (!event) notFound();
 
@@ -56,21 +67,27 @@ export default async function AdminEventPage({ params }: { params: Promise<{ slu
         <StatCard label="Payment pending" value={pendingPayment} />
       </div>
 
-      <Section title="Details">
-        <EventForm venues={(venues ?? []) as VenueOption[]} event={event} venueId={venueRow?.venue_id ?? null} />
-      </Section>
+      {isAdmin ? (
+        <>
+          <Section title="Details">
+            <EventForm venues={(venues ?? []) as VenueOption[]} event={event} venueId={venueRow?.venue_id ?? null} />
+          </Section>
 
-      <Section title="Waves" sub="Start times and capacity. Times are Singapore.">
-        <SlotsEditor eventId={event.id} eventDate={event.event_date} slots={slots} />
-      </Section>
+          <Section title="Waves" sub="Start times and capacity. Times are Singapore.">
+            <SlotsEditor eventId={event.id} eventDate={event.event_date} slots={slots} />
+          </Section>
+        </>
+      ) : null}
 
       <Section title="Registrations">
-        <RegistrationsTable slug={event.slug} registrations={registrations} />
+        <RegistrationsTable slug={event.slug} registrations={registrations} canExport={isAdmin} />
       </Section>
 
-      <Section title="Import results" sub="Upload the timing sheet, check the matches, then confirm.">
-        <ResultsImport eventId={event.id} />
-      </Section>
+      {isAdmin ? (
+        <Section title="Import results" sub="Upload the timing sheet, check the matches, then confirm.">
+          <ResultsImport eventId={event.id} />
+        </Section>
+      ) : null}
     </>
   );
 }

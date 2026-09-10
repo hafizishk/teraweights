@@ -5,7 +5,7 @@ import {
   getMember,
   getMemberBookings,
   getPackageDefinitions,
-  getStaff,
+  getCoaches,
 } from "@/lib/queries/admin";
 import { getMemberPackages } from "@/lib/queries/packages";
 import { recordPayment, setRole } from "@/lib/actions/members";
@@ -20,12 +20,12 @@ import { Badge, ClassBadge } from "@/components/ui/Badge";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { describePackage } from "@/lib/rules/package-copy";
 import { formatDate, formatDayTime } from "@/lib/format";
-import type { BookingStatus, Role } from "@/lib/types";
+import { ROLE_LABELS, type BookingStatus, type Role } from "@/lib/types";
 
 export const metadata = { title: "Member" };
 
-const ROLES: Role[] = ["member", "coach", "admin"];
-const roleLabels: Record<Role, string> = { member: "Member", coach: "Coach", admin: "Admin" };
+const ROLES: Role[] = ["member", "coach", "event_assistant", "admin"];
+const roleLabels = ROLE_LABELS;
 const zoneLabels: Record<string, string> = { east: "East", west: "West" };
 const statusLabels: Record<BookingStatus, string> = {
   booked: "Booked",
@@ -72,7 +72,7 @@ export default async function AdminMemberPage({ params }: { params: Promise<{ id
     getPackageDefinitions(supabase, { activeOnly: true }),
     getCreditAdjustments(supabase, id),
     getMemberBookings(supabase, id),
-    getStaff(supabase),
+    getCoaches(supabase),
     supabase
       .from("coach_assignments")
       .select("coach_id, profiles!coach_assignments_coach_id_fkey(full_name)")

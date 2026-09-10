@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionsBetween, getSessionCounts } from "@/lib/queries/sessions";
-import { getStaff } from "@/lib/queries/admin";
+import { getCoaches } from "@/lib/queries/admin";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Table, Th, Td, Tr, EmptyRow } from "@/components/admin/Table";
 import { ClassBadge } from "@/components/ui/Badge";
@@ -37,7 +37,7 @@ export default async function SchedulePage({
   const [all, counts, staff, { data: classTypes }, { data: venues }] = await Promise.all([
     getSessionsBetween(supabase, week.startIso, week.endIso),
     getSessionCounts(supabase, week.startIso, week.endIso),
-    isAdmin ? getStaff(supabase) : Promise.resolve([]),
+    isAdmin ? getCoaches(supabase) : Promise.resolve([]),
     isAdmin ? supabase.from("class_types").select("id, name").order("name") : Promise.resolve({ data: [] }),
     isAdmin ? supabase.from("venues").select("id, name").order("name") : Promise.resolve({ data: [] }),
   ]);

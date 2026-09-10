@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Wordmark } from "@/components/ui/Wordmark";
 import { signOut } from "@/lib/actions/auth";
-import type { Role } from "@/lib/types";
+import { ROLE_LABELS, type Role } from "@/lib/types";
 
 const adminNav = [
   { href: "/admin", label: "Dashboard" },
@@ -13,6 +13,7 @@ const adminNav = [
   { href: "/admin/packages", label: "Packages" },
   { href: "/admin/events", label: "Events" },
   { href: "/admin/announcements", label: "Announcements" },
+  { href: "/admin/staff", label: "Staff" },
 ];
 
 const coachNav = [
@@ -20,14 +21,23 @@ const coachNav = [
   { href: "/admin/schedule", label: "Schedule" },
 ];
 
+const eventAssistantNav = [{ href: "/admin/events", label: "Events" }];
+
+const navFor: Record<Role, { href: string; label: string }[]> = {
+  admin: adminNav,
+  coach: coachNav,
+  event_assistant: eventAssistantNav,
+  member: [],
+};
+
 export function Sidebar({ role, name }: { role: Role; name: string }) {
   const pathname = usePathname();
-  const nav = role === "admin" ? adminNav : coachNav;
+  const nav = navFor[role];
 
   return (
     <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r border-ink-3 bg-ink-2 px-4 py-6">
       <Wordmark />
-      <p className="mt-1 text-xs uppercase tracking-widest text-muted">{role === "admin" ? "Admin" : "Coach"}</p>
+      <p className="mt-1 text-xs uppercase tracking-widest text-muted">{ROLE_LABELS[role]}</p>
       <div className="heartbeat my-5 w-full" />
       <nav aria-label="Admin" className="flex flex-1 flex-col gap-1">
         {nav.map(({ href, label }) => {

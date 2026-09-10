@@ -148,11 +148,11 @@ export async function setRole(memberId: string, role: Role): Promise<ActionResul
   const guard = await requireAdmin();
   if (!guard.ok) return guard;
   if (memberId === guard.userId) return { ok: false, error: "You cannot change your own role." };
-  if (!["member", "coach", "admin"].includes(role)) return { ok: false, error: "Unknown role." };
+  if (!["member", "coach", "event_assistant", "admin"].includes(role)) return { ok: false, error: "Unknown role." };
 
   const { error } = await guard.supabase.from("profiles").update({ role }).eq("id", memberId);
   if (error) return { ok: false, error: readableError(error.message, "Could not change that role.") };
 
   refresh(memberId);
-  return { ok: true, message: `Role changed to ${role}.` };
+  return { ok: true, message: `Role changed to ${role.replace("_", " ")}.` };
 }

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireAdmin, readableError } from "@/lib/actions/guard";
+import { requireAdmin, requireEventStaff, readableError } from "@/lib/actions/guard";
 import type { ActionResult } from "@/lib/actions/bookings";
 
 function readable(message: string | undefined, fallback: string): string {
@@ -243,7 +243,7 @@ export async function setRegistrationStatus(
   id: string,
   status: "registered" | "waitlisted" | "cancelled" | "attended",
 ): Promise<ActionResult> {
-  const guard = await requireAdmin();
+  const guard = await requireEventStaff();
   if (!guard.ok) return guard;
 
   const { error } = await guard.supabase.from("event_registrations").update({ status }).eq("id", id);
@@ -255,7 +255,7 @@ export async function setRegistrationStatus(
 
 /** Records a PayNow payment against an event registration. */
 export async function setRegistrationPayment(id: string, paid: boolean): Promise<ActionResult> {
-  const guard = await requireAdmin();
+  const guard = await requireEventStaff();
   if (!guard.ok) return guard;
 
   const { error } = await guard.supabase

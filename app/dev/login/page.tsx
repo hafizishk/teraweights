@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 type Row = { email: string | null; full_name: string | null; role: Role; avatar_url: string | null };
 
-const ORDER: Record<Role, number> = { member: 0, coach: 1, admin: 2 };
+const ORDER: Record<Role, number> = { member: 0, coach: 1, event_assistant: 2, admin: 3 };
 
 export default async function DevLoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   if (!devLoginEnabled()) notFound();

@@ -7,6 +7,7 @@ import { Table, Th, Td, Tr, EmptyRow } from "@/components/admin/Table";
 import { Badge } from "@/components/ui/Badge";
 import { CardTitle } from "@/components/ui/Card";
 import { formatEventDate, formatSgd } from "@/lib/format";
+import type { Role } from "@/lib/types";
 
 export const metadata = { title: "Events" };
 
@@ -18,6 +19,16 @@ const typeLabels: Record<string, string> = {
 
 export default async function AdminEventsPage() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: me } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user!.id)
+    .maybeSingle<{ role: Role }>();
+  const isAdmin = me?.role === "admin";
+
   const events = await getEvents(supabase);
   const [counts, { data: venues }] = await Promise.all([
     getRegistrationCounts(
@@ -70,10 +81,12 @@ export default async function AdminEventsPage() {
         </tbody>
       </Table>
 
-      <section className="mt-8 flex flex-col gap-4 rounded-lg border border-ink-3 bg-ink-2 p-4">
-        <CardTitle className="display">New event</CardTitle>
-        <EventForm venues={(venues ?? []) as VenueOption[]} />
-      </section>
+      {isAdmin ? (
+        <section className="mt-8 flex flex-col gap-4 rounded-lg border border-ink-3 bg-ink-2 p-4">
+          <CardTitle className="display">New event</CardTitle>
+          <EventForm venues={(venues ?? []) as VenueOption[]} />
+        </section>
+      ) : null}
     </>
   );
 }
