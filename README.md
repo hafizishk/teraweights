@@ -22,6 +22,12 @@ npm run db:push     # apply supabase/migrations
 npm run db:reset    # local stack: reset, migrate and reseed (supabase/seed.sql)
 ```
 
+Pasting SQL into the Supabase editor from Windows PowerShell 5.1 requires an explicit encoding, or `Get-Content` reads the file in the system codepage and mangles every non-ASCII character:
+
+```powershell
+Get-Content supabase\seed.sql -Raw -Encoding UTF8 | Set-Clipboard
+```
+
 Without a Supabase project, validate the SQL against a throwaway local Postgres:
 
 ```bash
