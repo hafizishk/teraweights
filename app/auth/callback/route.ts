@@ -20,6 +20,15 @@ export async function GET(request: NextRequest) {
   const rawNext = searchParams.get("next");
   const next = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : null;
 
+  // Nothing in the query string means the result is in the URL fragment, which
+  // only the browser can read. Hand off to a client page; the browser carries
+  // the fragment across this redirect.
+  if (!code && !(tokenHash && type)) {
+    const url = new URL("/auth/finish", origin);
+    if (next) url.searchParams.set("next", next);
+    return NextResponse.redirect(url);
+  }
+
   const supabase = await createClient();
 
   let message: string | null = null;
@@ -29,8 +38,6 @@ export async function GET(request: NextRequest) {
   } else if (tokenHash && type) {
     const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
     message = error?.message ?? null;
-  } else {
-    message = "That sign-in link is missing its token.";
   }
 
   if (message) {
