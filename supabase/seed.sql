@@ -2,6 +2,12 @@
 -- Demo anchor date: Wed 9 Sep 2026 (Asia/Singapore). Names, dates and times are
 -- what the demo script (section 13) depends on. Do not change them casually.
 --
+-- Demo sign-in addresses are plus-aliases of one real inbox
+-- (hafizishk+<name>@gmail.com), because email OTP needs an address that can
+-- actually receive the code. To point them at a different inbox, replace
+-- `hafizishk` and `gmail.com` throughout this file, scripts/db-assert.sql and
+-- the README table. Member names, dates and times are unchanged.
+--
 -- Safe to re-run: clears seeded rows first.
 
 begin;
@@ -29,8 +35,23 @@ truncate table
   public.admin_allowlist
 restart identity cascade;
 
+-- Remove previously seeded auth users by their fixed seed ids, so changing the
+-- demo email addresses never leaves an orphaned account behind. The older
+-- @teraweights.test pattern is kept so a database seeded before the switch to
+-- deliverable addresses is cleaned up too.
 delete from auth.users
- where email like '%@teraweights.test' or email = 'admin@stackform.test';
+ where id in (
+   'a0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000002',
+   'a0000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000004',
+   'a0000000-0000-4000-8000-000000000005', 'a0000000-0000-4000-8000-000000000006',
+   'a0000000-0000-4000-8000-000000000007', 'a0000000-0000-4000-8000-000000000008',
+   'a0000000-0000-4000-8000-000000000009', 'a0000000-0000-4000-8000-000000000010',
+   'a0000000-0000-4000-8000-000000000011', 'a0000000-0000-4000-8000-000000000012',
+   'a0000000-0000-4000-8000-000000000099'
+ )
+ or email like '%@teraweights.test'
+ or email = 'admin@stackform.test'
+ or email like 'hafizishk+%@gmail.com';
 
 -- ---------------------------------------------------------------------------
 -- Helpers (dropped at the end)
@@ -94,26 +115,26 @@ end $$;
 -- Admin allowlist (D2D pattern): these emails get their role on first sign-in
 -- ---------------------------------------------------------------------------
 insert into public.admin_allowlist (email, role) values
-  ('admin@stackform.test', 'admin'),
-  ('faizal@teraweights.test', 'coach');
+  ('hafizishk+admin@gmail.com', 'admin'),
+  ('hafizishk+faizal@gmail.com', 'coach');
 
 -- ---------------------------------------------------------------------------
 -- Users → profiles (trigger creates the profile; we then set role/zone)
 -- ---------------------------------------------------------------------------
 do $$ begin
-  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000001', 'aisyah@teraweights.test',  'Aisyah Rahman',  '+65 9123 0001');
-  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000002', 'nur@teraweights.test',     'Nur Hidayah',    '+65 9123 0002');
-  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000003', 'faizal@teraweights.test',  'Faizal Hamid',   '+65 9123 0003');
-  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000004', 'irfan@teraweights.test',   'Irfan Yusof',    '+65 9123 0004');
-  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000005', 'siti@teraweights.test',    'Siti Zulaikha',  '+65 9123 0005');
-  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000006', 'marcus@teraweights.test',  'Marcus Tan',     '+65 9123 0006');
-  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000007', 'weilin@teraweights.test',  'Wei Lin Ng',     '+65 9123 0007');
-  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000008', 'priya@teraweights.test',   'Priya Nair',     '+65 9123 0008');
-  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000009', 'daniel@teraweights.test',  'Daniel Lim',     '+65 9123 0009');
-  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000010', 'hafizah@teraweights.test', 'Hafizah Osman',  '+65 9123 0010');
-  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000011', 'ryan@teraweights.test',    'Ryan Sufian',    '+65 9123 0011');
-  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000012', 'amirah@teraweights.test',  'Amirah Zainal',  '+65 9123 0012');
-  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000099', 'admin@stackform.test',     'Stackform Admin', null);
+  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000001', 'hafizishk+aisyah@gmail.com',  'Aisyah Rahman',  '+65 9123 0001');
+  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000002', 'hafizishk+nur@gmail.com',     'Nur Hidayah',    '+65 9123 0002');
+  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000003', 'hafizishk+faizal@gmail.com',  'Faizal Hamid',   '+65 9123 0003');
+  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000004', 'hafizishk+irfan@gmail.com',   'Irfan Yusof',    '+65 9123 0004');
+  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000005', 'hafizishk+siti@gmail.com',    'Siti Zulaikha',  '+65 9123 0005');
+  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000006', 'hafizishk+marcus@gmail.com',  'Marcus Tan',     '+65 9123 0006');
+  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000007', 'hafizishk+weilin@gmail.com',  'Wei Lin Ng',     '+65 9123 0007');
+  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000008', 'hafizishk+priya@gmail.com',   'Priya Nair',     '+65 9123 0008');
+  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000009', 'hafizishk+daniel@gmail.com',  'Daniel Lim',     '+65 9123 0009');
+  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000010', 'hafizishk+hafizah@gmail.com', 'Hafizah Osman',  '+65 9123 0010');
+  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000011', 'hafizishk+ryan@gmail.com',    'Ryan Sufian',    '+65 9123 0011');
+  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000012', 'hafizishk+amirah@gmail.com',  'Amirah Zainal',  '+65 9123 0012');
+  perform pg_temp.mk_user('a0000000-0000-4000-8000-000000000099', 'hafizishk+admin@gmail.com',   'Stackform Admin', null);
 end $$;
 
 update public.profiles set zone_pref = 'east' where id in (
@@ -416,49 +437,49 @@ create temporary table seed_results (event_id uuid, member_email text, display_n
 
 insert into seed_results values
   -- PA.ROX July 2025
-  ('e0000000-0000-4000-8000-000000000005', 'faizal@teraweights.test',  'Faizal Hamid',   'open',    '39:48'),
+  ('e0000000-0000-4000-8000-000000000005', 'hafizishk+faizal@gmail.com',  'Faizal Hamid',   'open',    '39:48'),
   ('e0000000-0000-4000-8000-000000000005', null,                       'Jonathan Koh',   'open',    '41:02'),
-  ('e0000000-0000-4000-8000-000000000005', 'marcus@teraweights.test',  'Marcus Tan',     'open',    '42:30'),
-  ('e0000000-0000-4000-8000-000000000005', 'daniel@teraweights.test',  'Daniel Lim',     'open',    '45:10'),
-  ('e0000000-0000-4000-8000-000000000005', 'irfan@teraweights.test',   'Irfan Yusof',    'open',    '47:20'),
-  ('e0000000-0000-4000-8000-000000000005', 'aisyah@teraweights.test',  'Aisyah Rahman',  'open',    '48:12'),
-  ('e0000000-0000-4000-8000-000000000005', 'nur@teraweights.test',     'Nur Hidayah',    'open',    '49:55'),
-  ('e0000000-0000-4000-8000-000000000005', 'ryan@teraweights.test',    'Ryan Sufian',    'open',    '51:08'),
+  ('e0000000-0000-4000-8000-000000000005', 'hafizishk+marcus@gmail.com',  'Marcus Tan',     'open',    '42:30'),
+  ('e0000000-0000-4000-8000-000000000005', 'hafizishk+daniel@gmail.com',  'Daniel Lim',     'open',    '45:10'),
+  ('e0000000-0000-4000-8000-000000000005', 'hafizishk+irfan@gmail.com',   'Irfan Yusof',    'open',    '47:20'),
+  ('e0000000-0000-4000-8000-000000000005', 'hafizishk+aisyah@gmail.com',  'Aisyah Rahman',  'open',    '48:12'),
+  ('e0000000-0000-4000-8000-000000000005', 'hafizishk+nur@gmail.com',     'Nur Hidayah',    'open',    '49:55'),
+  ('e0000000-0000-4000-8000-000000000005', 'hafizishk+ryan@gmail.com',    'Ryan Sufian',    'open',    '51:08'),
   ('e0000000-0000-4000-8000-000000000005', null,                       'Team Chua',      'doubles', '50:15'),
-  ('e0000000-0000-4000-8000-000000000005', 'siti@teraweights.test',    'Siti Zulaikha',  'doubles', '52:40'),
-  ('e0000000-0000-4000-8000-000000000005', 'hafizah@teraweights.test', 'Hafizah Osman',  'doubles', '55:02'),
+  ('e0000000-0000-4000-8000-000000000005', 'hafizishk+siti@gmail.com',    'Siti Zulaikha',  'doubles', '52:40'),
+  ('e0000000-0000-4000-8000-000000000005', 'hafizishk+hafizah@gmail.com', 'Hafizah Osman',  'doubles', '55:02'),
   ('e0000000-0000-4000-8000-000000000005', null,                       'The Lims',       'family',  '58:30'),
-  ('e0000000-0000-4000-8000-000000000005', 'amirah@teraweights.test',  'Amirah Zainal',  'family',  '61:15'),
+  ('e0000000-0000-4000-8000-000000000005', 'hafizishk+amirah@gmail.com',  'Amirah Zainal',  'family',  '61:15'),
   -- PA.ROX April 2026
-  ('e0000000-0000-4000-8000-000000000006', 'faizal@teraweights.test',  'Faizal Hamid',   'open',    '38:55'),
+  ('e0000000-0000-4000-8000-000000000006', 'hafizishk+faizal@gmail.com',  'Faizal Hamid',   'open',    '38:55'),
   ('e0000000-0000-4000-8000-000000000006', null,                       'Jonathan Koh',   'open',    '40:44'),
-  ('e0000000-0000-4000-8000-000000000006', 'marcus@teraweights.test',  'Marcus Tan',     'open',    '41:20'),
+  ('e0000000-0000-4000-8000-000000000006', 'hafizishk+marcus@gmail.com',  'Marcus Tan',     'open',    '41:20'),
   ('e0000000-0000-4000-8000-000000000006', null,                       'Kevin Ong',      'open',    '43:58'),
-  ('e0000000-0000-4000-8000-000000000006', 'daniel@teraweights.test',  'Daniel Lim',     'open',    '44:02'),
-  ('e0000000-0000-4000-8000-000000000006', 'aisyah@teraweights.test',  'Aisyah Rahman',  'open',    '44:37'),
-  ('e0000000-0000-4000-8000-000000000006', 'irfan@teraweights.test',   'Irfan Yusof',    'open',    '46:10'),
-  ('e0000000-0000-4000-8000-000000000006', 'nur@teraweights.test',     'Nur Hidayah',    'open',    '47:48'),
-  ('e0000000-0000-4000-8000-000000000006', 'ryan@teraweights.test',    'Ryan Sufian',    'open',    '49:30'),
+  ('e0000000-0000-4000-8000-000000000006', 'hafizishk+daniel@gmail.com',  'Daniel Lim',     'open',    '44:02'),
+  ('e0000000-0000-4000-8000-000000000006', 'hafizishk+aisyah@gmail.com',  'Aisyah Rahman',  'open',    '44:37'),
+  ('e0000000-0000-4000-8000-000000000006', 'hafizishk+irfan@gmail.com',   'Irfan Yusof',    'open',    '46:10'),
+  ('e0000000-0000-4000-8000-000000000006', 'hafizishk+nur@gmail.com',     'Nur Hidayah',    'open',    '47:48'),
+  ('e0000000-0000-4000-8000-000000000006', 'hafizishk+ryan@gmail.com',    'Ryan Sufian',    'open',    '49:30'),
   ('e0000000-0000-4000-8000-000000000006', null,                       'Team Chua',      'doubles', '49:05'),
-  ('e0000000-0000-4000-8000-000000000006', 'siti@teraweights.test',    'Siti Zulaikha',  'doubles', '50:12'),
-  ('e0000000-0000-4000-8000-000000000006', 'hafizah@teraweights.test', 'Hafizah Osman',  'doubles', '53:40'),
+  ('e0000000-0000-4000-8000-000000000006', 'hafizishk+siti@gmail.com',    'Siti Zulaikha',  'doubles', '50:12'),
+  ('e0000000-0000-4000-8000-000000000006', 'hafizishk+hafizah@gmail.com', 'Hafizah Osman',  'doubles', '53:40'),
   ('e0000000-0000-4000-8000-000000000006', null,                       'The Lims',       'family',  '57:44'),
-  ('e0000000-0000-4000-8000-000000000006', 'amirah@teraweights.test',  'Amirah Zainal',  'family',  '59:20'),
+  ('e0000000-0000-4000-8000-000000000006', 'hafizishk+amirah@gmail.com',  'Amirah Zainal',  'family',  '59:20'),
   -- Kampung Grind August 2026
-  ('e0000000-0000-4000-8000-000000000004', 'faizal@teraweights.test',  'Faizal Hamid',   'open',    '36:20'),
-  ('e0000000-0000-4000-8000-000000000004', 'marcus@teraweights.test',  'Marcus Tan',     'open',    '39:05'),
+  ('e0000000-0000-4000-8000-000000000004', 'hafizishk+faizal@gmail.com',  'Faizal Hamid',   'open',    '36:20'),
+  ('e0000000-0000-4000-8000-000000000004', 'hafizishk+marcus@gmail.com',  'Marcus Tan',     'open',    '39:05'),
   ('e0000000-0000-4000-8000-000000000004', null,                       'Kevin Ong',      'open',    '40:30'),
-  ('e0000000-0000-4000-8000-000000000004', 'aisyah@teraweights.test',  'Aisyah Rahman',  'open',    '41:05'),
-  ('e0000000-0000-4000-8000-000000000004', 'daniel@teraweights.test',  'Daniel Lim',     'open',    '42:15'),
-  ('e0000000-0000-4000-8000-000000000004', 'irfan@teraweights.test',   'Irfan Yusof',    'open',    '43:48'),
-  ('e0000000-0000-4000-8000-000000000004', 'nur@teraweights.test',     'Nur Hidayah',    'open',    '44:20'),
-  ('e0000000-0000-4000-8000-000000000004', 'ryan@teraweights.test',    'Ryan Sufian',    'open',    '46:02'),
-  ('e0000000-0000-4000-8000-000000000004', 'priya@teraweights.test',   'Priya Nair',     'open',    '47:35'),
+  ('e0000000-0000-4000-8000-000000000004', 'hafizishk+aisyah@gmail.com',  'Aisyah Rahman',  'open',    '41:05'),
+  ('e0000000-0000-4000-8000-000000000004', 'hafizishk+daniel@gmail.com',  'Daniel Lim',     'open',    '42:15'),
+  ('e0000000-0000-4000-8000-000000000004', 'hafizishk+irfan@gmail.com',   'Irfan Yusof',    'open',    '43:48'),
+  ('e0000000-0000-4000-8000-000000000004', 'hafizishk+nur@gmail.com',     'Nur Hidayah',    'open',    '44:20'),
+  ('e0000000-0000-4000-8000-000000000004', 'hafizishk+ryan@gmail.com',    'Ryan Sufian',    'open',    '46:02'),
+  ('e0000000-0000-4000-8000-000000000004', 'hafizishk+priya@gmail.com',   'Priya Nair',     'open',    '47:35'),
   ('e0000000-0000-4000-8000-000000000004', null,                       'Sarah Lee',      'open',    '48:50'),
-  ('e0000000-0000-4000-8000-000000000004', 'siti@teraweights.test',    'Siti Zulaikha',  'doubles', '47:10'),
-  ('e0000000-0000-4000-8000-000000000004', 'weilin@teraweights.test',  'Wei Lin Ng',     'doubles', '48:22'),
+  ('e0000000-0000-4000-8000-000000000004', 'hafizishk+siti@gmail.com',    'Siti Zulaikha',  'doubles', '47:10'),
+  ('e0000000-0000-4000-8000-000000000004', 'hafizishk+weilin@gmail.com',  'Wei Lin Ng',     'doubles', '48:22'),
   ('e0000000-0000-4000-8000-000000000004', null,                       'The Lims',       'family',  '54:12'),
-  ('e0000000-0000-4000-8000-000000000004', 'amirah@teraweights.test',  'Amirah Zainal',  'family',  '55:40');
+  ('e0000000-0000-4000-8000-000000000004', 'hafizishk+amirah@gmail.com',  'Amirah Zainal',  'family',  '55:40');
 
 -- Past-event registrations for seeded members (attended), so leaderboard RLS works.
 insert into public.event_registrations (event_id, member_id, status, payment_status, created_at)

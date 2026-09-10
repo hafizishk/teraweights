@@ -39,15 +39,17 @@ npm test
 
 ## Demo accounts (seeded)
 
-Sign in at `/login` with the email; the 6-digit code arrives by email (locally, in Inbucket at http://127.0.0.1:54324).
+Sign in at `/login` with the email. The 6-digit code arrives by email, or locally in Inbucket at http://127.0.0.1:54324.
+
+Demo accounts use plus-aliases of one real inbox, so every sign-in code lands in the same place. Gmail delivers `name+tag@gmail.com` to `name@gmail.com`. To point them elsewhere, see the header comment in `supabase/seed.sql`.
 
 | Who | Email | Role |
 |---|---|---|
-| Aisyah Rahman (demo member) | aisyah@teraweights.test | member |
-| Marcus Tan (PRO) | marcus@teraweights.test | member |
-| Priya Nair (no active package) | priya@teraweights.test | member |
-| Faizal Hamid (coach) | faizal@teraweights.test | coach |
-| Admin | admin@stackform.test | admin |
+| Aisyah Rahman (demo member) | hafizishk+aisyah@gmail.com | member |
+| Marcus Tan (PRO) | hafizishk+marcus@gmail.com | member |
+| Priya Nair (no active package) | hafizishk+priya@gmail.com | member |
+| Faizal Hamid (coach) | hafizishk+faizal@gmail.com | coach |
+| Admin | hafizishk+admin@gmail.com | admin |
 
 ## Routes
 

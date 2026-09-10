@@ -17,8 +17,8 @@ declare
   t text;
 begin
   perform pg_temp.assert((select count(*) from public.profiles) = 13, '12 members + admin');
-  perform pg_temp.assert((select role from public.profiles where email = 'admin@stackform.test') = 'admin', 'admin role');
-  perform pg_temp.assert((select role from public.profiles where email = 'faizal@teraweights.test') = 'coach', 'coach role');
+  perform pg_temp.assert((select role from public.profiles where email = 'hafizishk+admin@gmail.com') = 'admin', 'admin role');
+  perform pg_temp.assert((select role from public.profiles where email = 'hafizishk+faizal@gmail.com') = 'coach', 'coach role');
   perform pg_temp.assert((select full_name from public.profiles where id = aisyah) = 'Aisyah Rahman', 'demo member name');
 
   perform pg_temp.assert((select count(*) from public.class_types) = 4, '4 class types');
