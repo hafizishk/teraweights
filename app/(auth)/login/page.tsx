@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { Wordmark } from "@/components/ui/Wordmark";
+import { devLoginEnabled } from "@/lib/dev-login";
 import { LoginForm } from "@/components/auth/LoginForm";
 
 export const metadata = { title: "Sign in" };
@@ -18,6 +20,11 @@ export default async function LoginPage({
         <p className="text-sm text-muted">Sign in with your email. We&apos;ll send a 6-digit code.</p>
       </div>
       <LoginForm next={next} initialError={error} />
+      {devLoginEnabled() ? (
+        <Link href="/dev/login" className="text-center text-xs text-muted underline underline-offset-4">
+          Dev: sign in as a seeded account
+        </Link>
+      ) : null}
     </main>
   );
 }

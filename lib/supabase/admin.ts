@@ -5,7 +5,8 @@ import { createClient } from "@supabase/supabase-js";
 /**
  * Service-role client. Bypasses RLS.
  *
- * Only for: guest event registration and results CSV import (brief section 6).
+ * Only for: guest event registration, results CSV import (brief section 6),
+ * QR check-in, and the local-only dev sign-in (lib/actions/dev-login.ts).
  * Never import this from a Client Component or expose its output unfiltered.
  */
 export function createAdminClient() {

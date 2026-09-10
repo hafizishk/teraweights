@@ -49,6 +49,8 @@ npm test
 
 Sign in at `/login` with the email. The 6-digit code arrives by email, or locally in Inbucket at http://127.0.0.1:54324.
 
+**Without email delivery** (no sending domain yet), set `DEV_LOGIN_ENABLED=true` in `.env.local` and open http://localhost:3000/dev/login to sign in as any seeded account with one tap. It is ignored in production builds.
+
 Demo accounts use plus-aliases of one real inbox, so every sign-in code lands in the same place. Gmail delivers `name+tag@gmail.com` to `name@gmail.com`. To point them elsewhere, see the header comment in `supabase/seed.sql`.
 
 | Who | Email | Role |
