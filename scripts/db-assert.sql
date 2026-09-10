@@ -357,3 +357,98 @@ begin
   perform pg_temp.assert((select count(*) from public.session_attendees(array[thu])) = 5, 'attendees still 5');
   reset role;
 end $$;
+
+-- ---------------------------------------------------------------------------
+-- 0007 — admin portal: credit adjustments and session cancellation.
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  aisyah uuid := 'a0000000-0000-4000-8000-000000000001';
+  admin_ uuid := 'a0000000-0000-4000-8000-000000000099';
+  pack uuid;
+  thu uuid;
+  before_credits int;
+  after_credits int;
+  refunded int;
+begin
+  select mp.id, mp.credits_remaining into pack, before_credits
+    from public.member_packages mp
+   where mp.member_id = aisyah and mp.kind = 'credits'
+   limit 1;
+  perform pg_temp.assert(pack is not null, 'Aisyah holds a credit pack');
+
+  -- A member cannot adjust their own balance.
+  perform pg_temp.as_user(aisyah);
+  set local role authenticated;
+  begin
+    perform public.admin_adjust_credits(pack, 5, 'nice try');
+    raise exception 'member adjusted credits';
+  exception when insufficient_privilege then null;
+  end;
+  reset role;
+
+  -- An admin can, and the reason is recorded.
+  perform pg_temp.as_user(admin_);
+  set local role authenticated;
+  select public.admin_adjust_credits(pack, 2, 'goodwill after a washout') into after_credits;
+  perform pg_temp.assert(after_credits = before_credits + 2, 'credits moved by the delta');
+  perform pg_temp.assert(
+    (select count(*) from public.credit_adjustments ca where ca.member_package_id = pack and ca.delta = 2) = 1,
+    'adjustment logged');
+
+  -- A reason is compulsory, and a balance cannot go negative.
+  begin
+    perform public.admin_adjust_credits(pack, -1, '   ');
+    raise exception 'adjusted without a reason';
+  exception when sqlstate '22023' then null;
+  end;
+  begin
+    perform public.admin_adjust_credits(pack, -9999, 'overdraw');
+    raise exception 'balance went negative';
+  exception when sqlstate 'P0001' then null;
+  end;
+
+  -- Put it back so later assertions see the seeded balance.
+  perform public.admin_adjust_credits(pack, -2, 'undo test adjustment');
+  perform pg_temp.assert(
+    (select mp.credits_remaining from public.member_packages mp where mp.id = pack) = before_credits,
+    'balance restored');
+
+  -- Cancelling a session releases every booking and refunds credits. Both
+  -- credit-paid bookings in the seed sit on sessions the demo script walks
+  -- through, so this builds a throwaway session rather than disturbing them.
+  insert into public.sessions (class_type_id, venue_id, starts_at, ends_at, capacity)
+  select s.class_type_id, s.venue_id, pg_temp.sgt('2026-12-30','20:00'), pg_temp.sgt('2026-12-30','21:00'), 20
+    from public.sessions s limit 1
+  returning id into thu;
+
+  update public.member_packages set credits_remaining = credits_remaining - 1 where id = pack;
+  insert into public.bookings (session_id, member_id, member_package_id, status, entitlement, credits_used)
+  values (thu, aisyah, pack, 'booked', 'credit', 1);
+
+  select c.refunded into refunded from public.admin_cancel_session(thu) c;
+  perform pg_temp.assert(refunded = 1, 'one credit refunded, got ' || refunded);
+  perform pg_temp.assert(
+    (select mp.credits_remaining from public.member_packages mp where mp.id = pack) = before_credits,
+    'the refunded credit came back');
+  perform pg_temp.assert(
+    (select count(*) from public.bookings b where b.session_id = thu and b.status in ('booked', 'waitlisted')) = 0,
+    'no live bookings remain');
+  perform pg_temp.assert(
+    (select s.status from public.sessions s where s.id = thu) = 'cancelled',
+    'session is cancelled');
+
+  -- Cancelling twice is refused rather than double-refunding.
+  begin
+    perform public.admin_cancel_session(thu);
+    raise exception 'cancelled the same session twice';
+  exception when sqlstate 'P0001' then null;
+  end;
+
+  delete from public.bookings where session_id = thu;
+  delete from public.sessions where id = thu;
+
+  reset role;
+
+  raise notice 'admin portal assertions OK';
+end $$;

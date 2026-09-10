@@ -13,6 +13,7 @@ export type SessionRow = {
   class_name: string;
   venue_name: string;
   venue_map_url: string | null;
+  coach_id: string | null;
   coach_name: string | null;
 };
 
@@ -23,13 +24,14 @@ type SessionJoin = {
   capacity: number;
   status: SessionStatus;
   notes: string | null;
+  coach_id: string | null;
   class_types: { slug: ClassSlug; name: string } | null;
   venues: { name: string; map_url: string | null } | null;
   coach: { full_name: string | null } | null;
 };
 
 const SELECT =
-  "id, starts_at, ends_at, capacity, status, notes, " +
+  "id, starts_at, ends_at, capacity, status, notes, coach_id, " +
   "class_types(slug, name), venues(name, map_url), coach:profiles!sessions_coach_id_fkey(full_name)";
 
 function toRow(r: SessionJoin): SessionRow {
@@ -44,6 +46,7 @@ function toRow(r: SessionJoin): SessionRow {
     class_name: r.class_types?.name ?? "Session",
     venue_name: r.venues?.name ?? "TBC",
     venue_map_url: r.venues?.map_url ?? null,
+    coach_id: r.coach_id,
     coach_name: r.coach?.full_name ?? null,
   };
 }

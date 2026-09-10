@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/admin/Sidebar";
+import { Toaster } from "@/components/ui/Toaster";
 import { isStaff, type Profile } from "@/lib/types";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -21,9 +22,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="flex min-h-screen bg-ink">
       <Sidebar role={profile.role} name={profile.full_name ?? profile.email ?? ""} />
-      <main className="flex-1 px-8 py-8">
-        <div className="mx-auto w-full max-w-6xl">{children}</div>
-      </main>
+      <Toaster>
+        <main className="flex-1 px-8 py-8">
+          <div className="mx-auto w-full max-w-6xl">{children}</div>
+        </main>
+      </Toaster>
     </div>
   );
 }

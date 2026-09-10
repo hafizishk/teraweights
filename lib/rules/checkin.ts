@@ -10,9 +10,10 @@
  * Server-only: uses node:crypto. The secret never reaches the browser.
  */
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { CHECKIN_OPENS_MINUTES_BEFORE, CHECKIN_WINDOW_SECONDS } from "@/lib/rules/checkin-window";
 
-export const CHECKIN_WINDOW_SECONDS = 60;
-export const CHECKIN_OPENS_MINUTES_BEFORE = 30;
+export { CHECKIN_OPENS_MINUTES_BEFORE, CHECKIN_WINDOW_SECONDS };
+
 const TOKEN_LENGTH = 12;
 
 export function windowIndex(now: Date = new Date()): number {

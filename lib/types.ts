@@ -4,6 +4,8 @@ export type ClassSlug = "energise_east" | "energise_west" | "prime" | "fitness_e
 
 export type PreferredTime = "morning" | "evening" | "either";
 
+export type BookingStatus = "booked" | "waitlisted" | "cancelled" | "attended" | "no_show";
+
 export type Profile = {
   id: string;
   full_name: string | null;
