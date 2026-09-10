@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { requireOnboarded } from "@/lib/onboarding";
 import { getEvents, getMyRegistrations, getRegistrationCounts } from "@/lib/queries/events";
 import { EventCard } from "@/components/member/EventCard";
 import { sgtDate } from "@/lib/week";
@@ -11,6 +12,7 @@ export default async function EventsPage() {
     data: { user },
   } = await supabase.auth.getUser();
   const uid = user!.id;
+  await requireOnboarded(supabase, uid);
   const today = sgtDate(new Date());
 
   const [events, registrations] = await Promise.all([getEvents(supabase), getMyRegistrations(supabase, uid)]);

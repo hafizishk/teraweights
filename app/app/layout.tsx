@@ -1,4 +1,3 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getActivePackages } from "@/lib/queries/packages";
@@ -19,12 +18,6 @@ export default async function MemberLayout({ children }: { children: React.React
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle<Profile>(),
     getActivePackages(supabase, user.id),
   ]);
-
-  // First sign-in: three questions before anything else. The check-in landing
-  // page is exempt so a scanned QR still works for a brand-new member.
-  const path = (await headers()).get("x-pathname") ?? "";
-  const exempt = path.startsWith("/app/onboarding") || path.startsWith("/app/checkin");
-  if (profile && !profile.onboarded_at && !exempt) redirect("/app/onboarding");
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[480px] flex-col bg-ink">

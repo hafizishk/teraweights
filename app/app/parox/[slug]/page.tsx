@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { requireOnboarded } from "@/lib/onboarding";
 import { getMyResults } from "@/lib/queries/results";
 import { formatDelta, withDeltas } from "@/lib/rules/results";
 import { formatEventDate, formatMmSs } from "@/lib/format";
@@ -15,6 +16,7 @@ export default async function ParoxResultPage({ params }: { params: Promise<{ sl
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  await requireOnboarded(supabase, user!.id);
 
   const results = await getMyResults(supabase, user!.id);
   const rows = withDeltas(results);

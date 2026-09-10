@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { requireOnboarded } from "@/lib/onboarding";
 import { getActivePackages, getMemberPackages } from "@/lib/queries/packages";
 import { trialEligibility } from "@/lib/rules/trial";
 import { getMyBookings, getSession, getSessionCounts, getSessionsBetween } from "@/lib/queries/sessions";
@@ -42,6 +43,7 @@ export default async function HomePage() {
     data: { user },
   } = await supabase.auth.getUser();
   const uid = user!.id;
+  await requireOnboarded(supabase, uid);
   const now = new Date();
   const week = weekOf(now);
 

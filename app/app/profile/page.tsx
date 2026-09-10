@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { requireOnboarded } from "@/lib/onboarding";
 import { getMemberPackages } from "@/lib/queries/packages";
 import { signOut } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/Button";
@@ -15,6 +16,7 @@ export default async function ProfilePage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  await requireOnboarded(supabase, user!.id);
   const [{ data: profile }, packages] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle<Profile>(),
     getMemberPackages(supabase, user!.id),

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { requireOnboarded } from "@/lib/onboarding";
 import { getEventBySlug, getLeaderboard } from "@/lib/queries/events";
 import { Leaderboard } from "@/components/member/Leaderboard";
 import { typeLabel } from "@/components/member/EventCard";
@@ -19,6 +20,7 @@ export default async function EventResultsPage({ params }: { params: Promise<{ s
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  await requireOnboarded(supabase, user!.id);
 
   const event = await getEventBySlug(supabase, slug);
   if (!event) notFound();

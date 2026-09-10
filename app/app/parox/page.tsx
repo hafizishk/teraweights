@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { requireOnboarded } from "@/lib/onboarding";
 import { getMyResults } from "@/lib/queries/results";
 import { attendanceStreakWeeks, sessionsThisMonth } from "@/lib/rules/streak";
 import { formatDelta, personalBest, withDeltas } from "@/lib/rules/results";
@@ -26,6 +27,7 @@ export default async function ParoxPage() {
     data: { user },
   } = await supabase.auth.getUser();
   const uid = user!.id;
+  await requireOnboarded(supabase, uid);
   const now = new Date();
 
   const [results, { data: attended }, { data: nextParox }] = await Promise.all([

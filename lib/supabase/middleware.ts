@@ -23,10 +23,6 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Server layouts can't see the URL; the member layout reads this header to
-  // exempt /app/onboarding and /app/checkin from the onboarding redirect.
-  request.headers.set("x-pathname", pathname);
-
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

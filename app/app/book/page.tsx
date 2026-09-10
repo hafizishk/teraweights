@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { requireOnboarded } from "@/lib/onboarding";
 import { getActivePackages, getMemberPackages } from "@/lib/queries/packages";
 import { trialEligibility } from "@/lib/rules/trial";
 import { getMyBookings, getSessionCounts, getSessionsBetween } from "@/lib/queries/sessions";
@@ -29,6 +30,7 @@ export default async function BookPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  await requireOnboarded(supabase, user!.id);
 
   // No filter chosen: default to the member's zone (onboarding answer).
   let filterKey = FILTERS.some((x) => x.key === f) ? f! : "";

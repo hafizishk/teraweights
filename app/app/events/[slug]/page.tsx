@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { requireOnboarded } from "@/lib/onboarding";
 import { getEventBySlug, getMyRegistrations, getRegistrationCounts, getSlots } from "@/lib/queries/events";
 import { EventDetail } from "@/components/member/EventDetail";
 import { sgtDate } from "@/lib/week";
@@ -18,6 +19,7 @@ export default async function MemberEventPage({ params }: { params: Promise<{ sl
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  await requireOnboarded(supabase, user!.id);
 
   const event = await getEventBySlug(supabase, slug);
   if (!event) notFound();
