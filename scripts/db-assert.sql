@@ -319,6 +319,7 @@ begin
   perform pg_temp.assert((select count(*) from public.sessions where qr_secret is null) = 0, 'every session has a secret');
   perform pg_temp.assert((select onboarded_at from public.profiles where id = aisyah) is not null, 'seeded members are onboarded');
   perform pg_temp.assert((select weekly_target from public.profiles where id = aisyah) = 3, 'Aisyah targets 3 a week');
+  perform pg_temp.assert((select onboarded_at from public.profiles where id = 'a0000000-0000-4000-8000-000000000008') is null, 'Priya still has onboarding to do');
 
   -- Members can read sessions but never the secret column.
   perform pg_temp.as_user(aisyah);

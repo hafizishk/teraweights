@@ -148,12 +148,15 @@ update public.profiles set zone_pref = 'west' where id in (
 update public.profiles set role = 'coach' where id = 'a0000000-0000-4000-8000-000000000003';
 update public.profiles set role = 'admin' where id = 'a0000000-0000-4000-8000-000000000099';
 
--- Seeded Energisers have already answered the onboarding questions.
+-- Seeded Energisers have already answered the onboarding questions, except
+-- Priya (no active package), who demos first sign-in: onboarding, then the
+-- free trial offer on Home.
 update public.profiles
    set onboarded_at = now(),
        weekly_target = 3,
        preferred_time = case when zone_pref = 'west' then 'morning' else 'evening' end
- where id::text like 'a0000000-0000-4000-8000-%';
+ where id::text like 'a0000000-0000-4000-8000-%'
+   and id <> 'a0000000-0000-4000-8000-000000000008';
 
 -- ---------------------------------------------------------------------------
 -- Class types
