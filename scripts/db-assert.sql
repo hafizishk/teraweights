@@ -138,3 +138,45 @@ begin
   perform pg_temp.assert((select count(*) from public.event_registrations) = 0, 'RLS: anon sees no registrations');
   reset role;
 end $$;
+
+-- ---------------------------------------------------------------------------
+-- Community functions (0003): attendees respect sharing; pulse is sane
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  aisyah uuid := 'a0000000-0000-4000-8000-000000000001';
+  nur    uuid := 'a0000000-0000-4000-8000-000000000002';
+  thu uuid;
+  n int;
+begin
+  select s.id into thu from public.sessions s where s.starts_at = pg_temp.sgt('2026-09-10','20:00');
+
+  perform pg_temp.as_user(aisyah);
+  set local role authenticated;
+  select count(*) into n from public.session_attendees(array[thu]);
+  perform pg_temp.assert(n = 5, 'Thu 10 Sep shows 5 attendees, got ' || n);
+  perform pg_temp.assert(exists (select 1 from public.session_attendees(array[thu]) a where a.member_id = nur), 'Nur is listed');
+  reset role;
+
+  update public.profiles set share_attendance = false where id = nur;
+  perform pg_temp.as_user(aisyah);
+  set local role authenticated;
+  perform pg_temp.assert(not exists (select 1 from public.session_attendees(array[thu]) a where a.member_id = nur), 'Nur hidden after opting out');
+  perform pg_temp.assert((select count(*) from public.session_attendees(array[thu])) = 4, 'count drops to 4');
+  reset role;
+  update public.profiles set share_attendance = true where id = nur;
+
+  -- A member who opted out still sees themself.
+  update public.profiles set share_attendance = false where id = aisyah;
+  perform pg_temp.as_user(aisyah);
+  set local role authenticated;
+  perform pg_temp.assert(exists (select 1 from public.session_attendees(array[thu]) a where a.member_id = aisyah), 'opted-out member still sees self');
+  reset role;
+  update public.profiles set share_attendance = true where id = aisyah;
+
+  perform pg_temp.as_user(aisyah);
+  set local role authenticated;
+  perform pg_temp.assert((select trained_this_week from public.community_pulse()) >= 0, 'pulse readable by members');
+  perform pg_temp.assert((select sessions_left_this_week from public.community_pulse()) >= 0, 'sessions left readable');
+  reset role;
+end $$;

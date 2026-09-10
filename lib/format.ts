@@ -44,3 +44,18 @@ export function formatDayTime(date: Date | string): string {
 export function formatDate(date: Date | string): string {
   return formatInTimeZone(new Date(date), TZ, "d MMM yyyy");
 }
+
+/** "Thursday" */
+export function formatWeekday(date: Date | string): string {
+  return formatInTimeZone(new Date(date), TZ, "EEEE");
+}
+
+/** Venue names carry a zone in brackets; most surfaces only need the place. */
+export function shortVenue(name: string): string {
+  return name.replace(/\s*\(.*\)\s*$/, "");
+}
+
+/** "Faizal" from "Faizal Hamid". */
+export function firstName(name: string | null | undefined): string {
+  return (name ?? "").trim().split(/\s+/)[0] ?? "";
+}

@@ -519,7 +519,7 @@ insert into public.announcements (title, body, audience, published_at, created_b
    'all', pg_temp.sgt('2026-09-04', '09:00'), 'a0000000-0000-4000-8000-000000000099', pg_temp.sgt('2026-09-04', '08:45')),
   ('East: Thursday venue reminder',
    'Thursday 8pm meets at the usual Bedok Reservoir Road spot by the car park. Bring water, wet-weather plan is the shelter nearby.',
-   'east', pg_temp.sgt('2026-09-08', '09:00'), 'a0000000-0000-4000-8000-000000000099', pg_temp.sgt('2026-09-08', '08:30'));
+   'east', pg_temp.sgt('2026-09-08', '09:00'), 'a0000000-0000-4000-8000-000000000003', pg_temp.sgt('2026-09-08', '08:30'));
 
 -- ---------------------------------------------------------------------------
 -- Coach assignments (Aisyah: none — assigned live in the demo)
