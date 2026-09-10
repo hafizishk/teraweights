@@ -9,6 +9,20 @@ import { isStaff, type Role } from "@/lib/types";
  * RLS remains the real guard; this only shapes navigation.
  */
 export async function updateSession(request: NextRequest) {
+  // A sign-in link can land on any path: Supabase falls back to the project's
+  // Site URL when a redirect target isn't allowlisted, and older emails carry
+  // whatever target they were sent with. Funnel the token to /auth/callback
+  // wherever it arrives, so the link works either way.
+  const { pathname, searchParams } = request.nextUrl;
+  const hasAuthToken =
+    searchParams.has("code") || (searchParams.has("token_hash") && searchParams.has("type"));
+
+  if (hasAuthToken && pathname !== "/auth/callback") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/callback";
+    return NextResponse.redirect(url);
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -35,7 +49,6 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
   const wantsApp = pathname === "/app" || pathname.startsWith("/app/");
   const wantsAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
   const wantsLogin = pathname === "/login";
