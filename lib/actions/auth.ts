@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isStaff, type Role } from "@/lib/types";
@@ -17,7 +18,24 @@ function safeNext(value: FormDataEntryValue | null): string | null {
   return value.startsWith("/") && !value.startsWith("//") ? value : null;
 }
 
-/** Step 1: send a 6-digit code to the email. */
+/** Where the emailed sign-in link should land. */
+async function callbackUrl(next: string | null): Promise<string> {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  const proto = h.get("x-forwarded-proto") ?? (host?.startsWith("localhost") ? "http" : "https");
+  const url = new URL("/auth/callback", `${proto}://${host}`);
+  if (next) url.searchParams.set("next", next);
+  return url.toString();
+}
+
+/**
+ * Step 1: send a sign-in email.
+ *
+ * Supabase sends one message carrying both a 6-digit code and a link. Either
+ * completes sign-in: the code through verifyOtp below, the link through
+ * /auth/callback. Editing the email template to show the code requires custom
+ * SMTP, so on a stock project the link is the path that works.
+ */
 export async function sendOtp(_prev: AuthState, formData: FormData): Promise<AuthState> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   if (!EMAIL_RE.test(email)) {
@@ -27,7 +45,10 @@ export async function sendOtp(_prev: AuthState, formData: FormData): Promise<Aut
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { shouldCreateUser: true },
+    options: {
+      shouldCreateUser: true,
+      emailRedirectTo: await callbackUrl(safeNext(formData.get("next"))),
+    },
   });
 
   if (error) {

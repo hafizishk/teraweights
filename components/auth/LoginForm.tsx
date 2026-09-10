@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/Button";
 const inputClass =
   "h-12 w-full rounded-md border border-ink-3 bg-ink-2 px-4 text-base text-paper placeholder:text-muted focus:border-brand focus:outline-none";
 
-export function LoginForm({ next }: { next?: string }) {
+export function LoginForm({ next, initialError }: { next?: string; initialError?: string }) {
   const [state, action, pending] = useActionState<AuthState, FormData>(
     async (prev, formData) => (prev.step === "code" ? verifyOtp(prev, formData) : sendOtp(prev, formData)),
-    { step: "email" },
+    { step: "email", error: initialError },
   );
 
   if (state.step === "code") {
@@ -20,7 +20,8 @@ export function LoginForm({ next }: { next?: string }) {
         {next ? <input type="hidden" name="next" value={next} /> : null}
         <label className="flex flex-col gap-2">
           <span className="text-sm text-muted">
-            Code sent to <span className="text-paper">{state.email}</span>
+            Sent to <span className="text-paper">{state.email}</span>. Enter the 6-digit code, or
+            just tap the sign-in link in the email.
           </span>
           <input
             name="code"
@@ -47,6 +48,7 @@ export function LoginForm({ next }: { next?: string }) {
 
   return (
     <form action={action} className="flex flex-col gap-4">
+      {next ? <input type="hidden" name="next" value={next} /> : null}
       <label className="flex flex-col gap-2">
         <span className="text-sm text-muted">Email</span>
         <input
