@@ -35,7 +35,7 @@ docs/
 ```
 
 ## Roles
-`member` | `coach` | `admin` on `profiles.role`. Middleware gates `/app` (any authenticated) and `/admin` (coach or admin). RLS is the real guard — never rely on middleware alone. Service role key only in `lib/supabase/admin.ts`, only used server-side for guest event registration and CSV import.
+`member` | `coach` | `admin` on `profiles.role`. Middleware gates `/app` (any authenticated) and `/admin` (coach or admin). RLS is the real guard — never rely on middleware alone. Service role key only in `lib/supabase/admin.ts`, only used server-side for guest event registration, CSV import, and QR check-in (reads the session secret and marks attendance after `lib/rules/checkin.ts` validates; members can never read secrets themselves).
 
 ## Business rules live in `lib/rules/`
 Credits, waitlist promotion, cancellation cutoffs, check-in validation, streak calc, trial eligibility — pure functions with no Supabase calls, called from server actions. See brief section 7. If you change a rule, change it there and nowhere else.

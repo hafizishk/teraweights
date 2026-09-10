@@ -302,3 +302,57 @@ begin
   select registered_count into n from public.event_registration_counts(array[parox]) where event_id = parox;
   perform pg_temp.assert(n = 6, 'PA.ROX Sep has 6 registered, got ' || n);
 end $$;
+
+-- ---------------------------------------------------------------------------
+-- Profile + check-in (0006)
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  aisyah uuid := 'a0000000-0000-4000-8000-000000000001';
+  faizal uuid := 'a0000000-0000-4000-8000-000000000003';
+  admin_ uuid := 'a0000000-0000-4000-8000-000000000099';
+  thu uuid;
+  secret text;
+  n int;
+begin
+  select s.id into thu from public.sessions s where s.starts_at = pg_temp.sgt('2026-09-10','20:00');
+  perform pg_temp.assert((select count(*) from public.sessions where qr_secret is null) = 0, 'every session has a secret');
+  perform pg_temp.assert((select onboarded_at from public.profiles where id = aisyah) is not null, 'seeded members are onboarded');
+  perform pg_temp.assert((select weekly_target from public.profiles where id = aisyah) = 3, 'Aisyah targets 3 a week');
+
+  -- Members can read sessions but never the secret column.
+  perform pg_temp.as_user(aisyah);
+  set local role authenticated;
+  select count(*) into n from public.sessions;
+  perform pg_temp.assert(n > 0, 'member still counts sessions');
+  select count(*) into n from public.sessions s where s.starts_at > now();
+  perform pg_temp.assert(n > 0, 'member still reads session columns');
+  begin
+    perform s.qr_secret from public.sessions s limit 1;
+    raise exception 'member read qr_secret';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.session_qr_secret(thu);
+    raise exception 'member fetched a secret via RPC';
+  exception when insufficient_privilege then null;
+  end;
+  reset role;
+
+  -- The session's coach and the admin can.
+  perform pg_temp.as_user(faizal);
+  set local role authenticated;
+  select public.session_qr_secret(thu) into secret;
+  perform pg_temp.assert(length(secret) = 32, 'coach reads secret');
+  reset role;
+  perform pg_temp.as_user(admin_);
+  set local role authenticated;
+  perform pg_temp.assert(public.session_qr_secret(thu) = secret, 'admin reads the same secret');
+  reset role;
+
+  -- Attendees now carry avatar_url.
+  perform pg_temp.as_user(aisyah);
+  set local role authenticated;
+  perform pg_temp.assert((select count(*) from public.session_attendees(array[thu])) = 5, 'attendees still 5');
+  reset role;
+end $$;

@@ -1,8 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
+import { getMemberPackages } from "@/lib/queries/packages";
 import { signOut } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { Placeholder } from "@/components/ui/Placeholder";
+import { AvatarUpload } from "@/components/member/AvatarUpload";
+import { ProfileForm } from "@/components/member/ProfileForm";
+import { PackagesList } from "@/components/member/PackagesList";
+import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import type { Profile } from "@/lib/types";
 
 export const metadata = { title: "Profile" };
@@ -12,25 +15,27 @@ export default async function ProfilePage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user!.id)
-    .maybeSingle<Profile>();
+  const [{ data: profile }, packages] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle<Profile>(),
+    getMemberPackages(supabase, user!.id),
+  ]);
+  if (!profile) return null;
 
   return (
     <div className="flex flex-col gap-6">
-      <Placeholder title="Profile" session={4} items={["Zone preference", "Packages: active and expired"]} />
-      <Card className="flex flex-col gap-1 text-sm">
-        <p className="text-lg text-paper">{profile?.full_name ?? "—"}</p>
-        <p className="text-muted">{profile?.email}</p>
-        <p className="text-muted">{profile?.phone ?? "No phone"}</p>
-        <p className="text-muted">
-          Role: {profile?.role} · Zone: {profile?.zone_pref ?? "—"}
-        </p>
-      </Card>
+      <div className="flex flex-col gap-4">
+        <h1 className="text-3xl">Profile</h1>
+        <AvatarUpload userId={profile.id} name={profile.full_name ?? "Energiser"} src={profile.avatar_url} />
+      </div>
+
+      <ProfileForm profile={profile} />
+
+      <PackagesList packages={packages} weeklyTarget={profile.weekly_target} />
+
+      <InstallPrompt />
+
       <form action={signOut}>
-        <Button type="submit" variant="secondary">
+        <Button type="submit" variant="ghost">
           Log out
         </Button>
       </form>

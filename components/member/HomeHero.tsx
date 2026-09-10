@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ClassBadge } from "@/components/ui/Badge";
-import { AvatarRow } from "@/components/ui/Avatar";
+import { AvatarRow, type Person } from "@/components/ui/Avatar";
 import { DuotonePhoto } from "@/components/member/DuotonePhoto";
 import { StreakRing } from "@/components/member/StreakRing";
 import { useToast } from "@/components/ui/Toaster";
@@ -19,16 +19,21 @@ export function HomeHero({
   firstName,
   streakWeeks,
   sessionsThisWeek,
+  weeklyTarget,
   view,
-  attendeeNames,
+  people,
   attendeeLine,
+  checkinOpen,
 }: {
   firstName: string;
   streakWeeks: number;
   sessionsThisWeek: number;
+  weeklyTarget: number;
   view: SessionView | null;
-  attendeeNames: string[];
+  people: Person[];
   attendeeLine: string;
+  /** Within 30 minutes of the next session's start (rule: lib/rules/checkin.ts). */
+  checkinOpen: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -53,11 +58,10 @@ export function HomeHero({
     });
   }
 
-  // Top-left: greeting, then the streak ring beneath it.
   const top = (
     <div className="flex flex-col gap-3">
       <span className="text-sm text-paper/85">Hey {firstName}</span>
-      <StreakRing streakWeeks={streakWeeks} sessionsThisWeek={sessionsThisWeek} />
+      <StreakRing streakWeeks={streakWeeks} sessionsThisWeek={sessionsThisWeek} weeklyTarget={weeklyTarget} />
     </div>
   );
 
@@ -85,6 +89,7 @@ export function HomeHero({
   }
 
   const coach = view.coachName ? ` · ${first(view.coachName)} coaching` : "";
+  const attended = view.bookingStatus === "attended";
 
   return (
     <section className="-mx-4 -mt-4 flex flex-col gap-3">
@@ -103,7 +108,7 @@ export function HomeHero({
               {coach}
             </p>
             <div className="mt-1 flex items-center gap-2.5">
-              <AvatarRow names={attendeeNames} />
+              <AvatarRow people={people} />
               <span className="text-[13px]">{attendeeLine}</span>
             </div>
           </div>
@@ -116,10 +121,25 @@ export function HomeHero({
         </p>
       ) : null}
 
+      {attended ? (
+        <p className="mx-4 rounded-md border border-ink-3 bg-ink-2 px-3 py-2 text-sm">You&apos;re checked in.</p>
+      ) : checkinOpen ? (
+        <div className="mx-4">
+          <Link
+            href="/app/checkin/scan"
+            className="display flex h-12 w-full items-center justify-center rounded-md bg-brand text-lg tracking-wide text-paper hover:bg-brand-2"
+          >
+            Check in
+          </Link>
+        </div>
+      ) : null}
+
       <div className="flex gap-4 px-4">
-        <button type="button" onClick={onCancel} disabled={pending} className={linkClass}>
-          {pending ? "Cancelling…" : confirming ? "Cancel anyway" : "Cancel"}
-        </button>
+        {!attended ? (
+          <button type="button" onClick={onCancel} disabled={pending} className={linkClass}>
+            {pending ? "Cancelling…" : confirming ? "Cancel anyway" : "Cancel"}
+          </button>
+        ) : null}
         <Link href="/app/events" className={linkClass}>
           Invite a friend
         </Link>

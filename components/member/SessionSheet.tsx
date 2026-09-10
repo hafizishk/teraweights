@@ -8,6 +8,9 @@ import { ClassBadge } from "@/components/ui/Badge";
 import { useToast } from "@/components/ui/Toaster";
 import { bookSession, cancelBooking, joinWaitlist } from "@/lib/actions/bookings";
 import { formatDay, formatTime } from "@/lib/format";
+import { DuotonePhoto } from "@/components/member/DuotonePhoto";
+import { CLASS_INFO } from "@/lib/class-info";
+import { photoForClass } from "@/lib/photos";
 import type { SessionView } from "@/lib/view/session-view";
 
 export function SessionSheet({
@@ -73,17 +76,21 @@ export function SessionSheet({
         onClick={onClose}
         className="absolute inset-0 bg-ink/70 backdrop-blur-sm"
       />
-      <div className="safe-bottom relative w-full max-w-[480px] rounded-t-2xl border-t border-ink-3 bg-ink-2 p-5">
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-ink-3" />
-
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
+      <div className="safe-bottom relative w-full max-w-[480px] overflow-hidden rounded-t-2xl border-t border-ink-3 bg-ink-2">
+        <DuotonePhoto src={photoForClass(view.classSlug)} fadeTo="card" sizes="480px" className="h-[150px]">
+          <div className="flex flex-col gap-2 p-5 pb-2">
             <ClassBadge slug={view.classSlug} className="self-start" />
-            <h2 className="text-2xl leading-tight">{view.className}</h2>
-            <p className="text-sm text-muted">
+            <h2 className="text-[26px] leading-none">{view.className}</h2>
+            <p className="text-sm text-paper/85">
               {formatDay(view.startsAt)} · {formatTime(view.startsAt)}–{formatTime(view.endsAt)}
             </p>
           </div>
+        </DuotonePhoto>
+
+        <div className="flex flex-col gap-4 p-5 pt-3">
+          <p className="text-sm leading-relaxed text-muted">
+            {CLASS_INFO[view.classSlug].line1} {CLASS_INFO[view.classSlug].line2}
+          </p>
 
           <dl className="flex flex-col gap-2 text-sm">
             <div className="flex justify-between gap-4">

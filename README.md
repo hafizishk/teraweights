@@ -15,7 +15,7 @@ cp .env.example .env.local   # fill in Supabase URL, anon key, service role key
 
 ### Database
 
-Migrations apply in order: `0001_init.sql`, `0002_booking_functions.sql`, `0003_community.sql`, then `seed.sql`.
+Migrations apply in order: `0001` through `0006` in `supabase/migrations`, then `seed.sql`.
 
 With the Supabase CLI linked to the project:
 

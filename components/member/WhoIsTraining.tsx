@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ClassBadge } from "@/components/ui/Badge";
-import { AvatarRow } from "@/components/ui/Avatar";
+import { AvatarRow, type Person } from "@/components/ui/Avatar";
 import { DuotonePhoto } from "@/components/member/DuotonePhoto";
 import { formatDay, formatTime, shortVenue } from "@/lib/format";
 import { photoForClass } from "@/lib/photos";
@@ -8,7 +8,9 @@ import type { SessionView } from "@/lib/view/session-view";
 
 export type TrainingRow = {
   view: SessionView;
-  attendeeNames: string[];
+  people: Person[];
+  /** Matches the member's preferred time of day. */
+  usual?: boolean;
 };
 
 export function WhoIsTraining({ rows, weekLabel }: { rows: TrainingRow[]; weekLabel: string }) {
@@ -25,7 +27,7 @@ export function WhoIsTraining({ rows, weekLabel }: { rows: TrainingRow[]; weekLa
         </p>
       ) : (
         <ul className="flex flex-col gap-2">
-          {rows.map(({ view, attendeeNames }) => {
+          {rows.map(({ view, people, usual }) => {
             const mine = view.bookingStatus === "booked" || view.bookingStatus === "attended";
             const status = mine
               ? { text: "You're in", tone: "text-paper" }
@@ -48,6 +50,7 @@ export function WhoIsTraining({ rows, weekLabel }: { rows: TrainingRow[]; weekLa
                   <span className="flex min-w-0 flex-1 flex-col gap-1">
                     <span className="display text-lg leading-none">
                       {formatDay(view.startsAt).split(" ")[0]} {formatTime(view.startsAt)}
+                      {usual ? <span className="ml-2 text-xs font-normal normal-case tracking-normal text-muted">Your usual</span> : null}
                     </span>
                     <span className="flex items-center gap-2">
                       <ClassBadge slug={view.classSlug} />
@@ -55,7 +58,7 @@ export function WhoIsTraining({ rows, weekLabel }: { rows: TrainingRow[]; weekLa
                     </span>
                   </span>
                   <span className="flex shrink-0 flex-col items-end gap-1">
-                    <AvatarRow names={attendeeNames} max={3} />
+                    <AvatarRow people={people} max={3} />
                     <span className={`text-xs ${status.tone}`}>{status.text}</span>
                   </span>
                 </Link>

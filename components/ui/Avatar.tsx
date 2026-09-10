@@ -1,6 +1,12 @@
-/** Initials avatar. Colour is derived from the name so it is stable across renders. */
+/* eslint-disable @next/next/no-img-element */
+/**
+ * Avatar: the member's photo when they have one, otherwise initials on a
+ * colour derived from the name so it is stable across renders.
+ */
 const PALETTE = ["#2b6cb0", "#b11226", "#3a3a3a", "#f2c230"];
 const INK_ON = new Set(["#f2c230"]);
+
+export type Person = { name: string; src?: string | null };
 
 export function initialsOf(name: string | null | undefined): string {
   const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
@@ -16,24 +22,40 @@ function colourFor(name: string): string {
 
 export function Avatar({
   name,
+  src,
   size = 28,
   ring = true,
   className = "",
 }: {
   name: string | null | undefined;
+  src?: string | null;
   size?: number;
   ring?: boolean;
   className?: string;
 }) {
   const label = name ?? "Energiser";
   const bg = colourFor(label);
+  const ringClass = ring ? "border-2 border-ink-2" : "";
+
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={label}
+        title={label}
+        width={size}
+        height={size}
+        className={`shrink-0 rounded-full object-cover ${ringClass} ${className}`}
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+
   return (
     <span
       aria-label={label}
       title={label}
-      className={`display inline-flex shrink-0 items-center justify-center rounded-full leading-none ${
-        ring ? "border-2 border-ink-2" : ""
-      } ${className}`}
+      className={`display inline-flex shrink-0 items-center justify-center rounded-full leading-none ${ringClass} ${className}`}
       style={{
         width: size,
         height: size,
@@ -48,13 +70,13 @@ export function Avatar({
 }
 
 /** Overlapping row of avatars, first `max` shown. */
-export function AvatarRow({ names, max = 4, size = 28 }: { names: string[]; max?: number; size?: number }) {
-  const shown = names.slice(0, max);
+export function AvatarRow({ people, max = 4, size = 28 }: { people: Person[]; max?: number; size?: number }) {
+  const shown = people.slice(0, max);
   if (shown.length === 0) return null;
   return (
     <span className="flex">
-      {shown.map((n, i) => (
-        <Avatar key={`${n}-${i}`} name={n} size={size} className={i > 0 ? "-ml-2" : ""} />
+      {shown.map((p, i) => (
+        <Avatar key={`${p.name}-${i}`} name={p.name} src={p.src} size={size} className={i > 0 ? "-ml-2" : ""} />
       ))}
     </span>
   );

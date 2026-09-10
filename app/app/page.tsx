@@ -2,7 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { getActivePackages, getMemberPackages } from "@/lib/queries/packages";
 import { trialEligibility } from "@/lib/rules/trial";
 import { getMyBookings, getSession, getSessionCounts, getSessionsBetween } from "@/lib/queries/sessions";
-import { attendeeLine, getAttendees, getCommunityPulse } from "@/lib/queries/community";
+import { attendeeLine, attendeePeople, getAttendees, getCommunityPulse } from "@/lib/queries/community";
+import { checkinState } from "@/lib/rules/checkin";
+import { formatInTimeZone } from "date-fns-tz";
+import { TZ } from "@/lib/format";
 import { buildSessionView } from "@/lib/view/session-view";
 import { attendanceStreakWeeks, sessionsThisWeek } from "@/lib/rules/streak";
 import { sgtDate, sgtMidnight, weekOf } from "@/lib/week";
@@ -99,14 +102,23 @@ export default async function HomePage() {
     : null;
 
   const heroAttendees = nextSession ? (attendees.get(nextSession.id) ?? []) : [];
-  const heroNames = heroAttendees.filter((a) => a.id !== uid).map((a) => a.name);
+  const heroPeople = attendeePeople(heroAttendees, uid);
+  const checkinOpen = nextSession ? checkinState(nextSession, now) === "open" : false;
+
+  function isUsual(startsAt: string): boolean {
+    const pref = profile?.preferred_time;
+    if (!pref || pref === "either") return false;
+    const hour = Number(formatInTimeZone(new Date(startsAt), TZ, "H"));
+    return pref === "morning" ? hour < 12 : hour >= 12;
+  }
 
   const rows: TrainingRow[] = remaining
     .filter((s) => s.id !== nextSession?.id)
     .slice(0, 4)
     .map((s) => ({
       view: buildSessionView(s, weekCounts.get(s.id), myWeekBookings.get(s.id), packages, now),
-      attendeeNames: (attendees.get(s.id) ?? []).filter((a) => a.id !== uid).map((a) => a.name),
+      people: attendeePeople(attendees.get(s.id) ?? [], uid),
+      usual: isUsual(s.starts_at),
     }));
 
   // Latest announcement for this member's audience, with its author.
@@ -158,9 +170,11 @@ export default async function HomePage() {
         firstName={firstName}
         streakWeeks={streakWeeks}
         sessionsThisWeek={trainedThisWeek}
+        weeklyTarget={profile?.weekly_target ?? 3}
         view={nextView}
-        attendeeNames={heroNames}
+        people={heroPeople}
         attendeeLine={nextView ? attendeeLine(heroAttendees, uid, nextView.bookedCount) : ""}
+        checkinOpen={checkinOpen}
       />
 
       <PulseTiles

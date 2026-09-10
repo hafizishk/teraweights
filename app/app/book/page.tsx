@@ -24,16 +24,22 @@ export default async function BookPage({
 }) {
   const { w, f, s } = await searchParams;
   const offset = Number.isFinite(Number(w)) ? Number(w) : 0;
-  const filterKey = FILTERS.some((x) => x.key === f) ? f! : "all";
-  const filterSlug = FILTERS.find((x) => x.key === filterKey)!.slug;
-
-  const now = new Date();
-  const week = weekOf(now, offset);
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // No filter chosen: default to the member's zone (onboarding answer).
+  let filterKey = FILTERS.some((x) => x.key === f) ? f! : "";
+  if (!filterKey) {
+    const { data: profile } = await supabase.from("profiles").select("zone_pref").eq("id", user!.id).maybeSingle<{ zone_pref: string | null }>();
+    filterKey = profile?.zone_pref === "west" ? "west" : profile?.zone_pref === "east" ? "east" : "all";
+  }
+  const filterSlug = FILTERS.find((x) => x.key === filterKey)!.slug;
+
+  const now = new Date();
+  const week = weekOf(now, offset);
 
   const [sessions, counts, packages, allPackages] = await Promise.all([
     getSessionsBetween(supabase, week.startIso, week.endIso),

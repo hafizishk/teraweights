@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type Attendee = { id: string; name: string };
+export type Attendee = { id: string; name: string; avatarUrl: string | null };
 
 /** Who is booked into each session, limited to members who share attendance. */
 export async function getAttendees(
@@ -11,9 +11,14 @@ export async function getAttendees(
   if (sessionIds.length === 0) return map;
 
   const { data } = await supabase.rpc("session_attendees", { p_session_ids: sessionIds });
-  for (const row of (data ?? []) as { session_id: string; member_id: string; full_name: string | null }[]) {
+  for (const row of (data ?? []) as {
+    session_id: string;
+    member_id: string;
+    full_name: string | null;
+    avatar_url: string | null;
+  }[]) {
     const list = map.get(row.session_id) ?? [];
-    list.push({ id: row.member_id, name: row.full_name ?? "Energiser" });
+    list.push({ id: row.member_id, name: row.full_name ?? "Energiser", avatarUrl: row.avatar_url });
     map.set(row.session_id, list);
   }
   return map;
@@ -43,4 +48,9 @@ export function attendeeLine(attendees: Attendee[], meId: string, totalBooked: n
   }
   const tail = unnamed > 0 ? ` +${unnamed}` : "";
   return `${named.join(", ")}${tail} ${named.length + unnamed === 1 ? "is" : "are"} in`;
+}
+
+/** Attendees as avatar people, excluding the viewer. */
+export function attendeePeople(attendees: Attendee[], meId: string): { name: string; src: string | null }[] {
+  return attendees.filter((a) => a.id !== meId).map((a) => ({ name: a.name, src: a.avatarUrl }));
 }
