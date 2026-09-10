@@ -132,12 +132,12 @@ export default async function HomePage() {
   // Next upcoming event, for the countdown tile.
   const { data: event } = await supabase
     .from("events")
-    .select("id, name, type, event_date")
+    .select("id, slug, name, type, event_date")
     .gte("event_date", sgtDate(now))
     .eq("registration_open", true)
     .order("event_date", { ascending: true })
     .limit(1)
-    .maybeSingle<{ id: string; name: string; type: string; event_date: string }>();
+    .maybeSingle<{ id: string; slug: string; name: string; type: string; event_date: string }>();
 
   const daysToEvent = event
     ? Math.max(0, Math.round((sgtMidnight(event.event_date).getTime() - sgtMidnight(sgtDate(now)).getTime()) / 86_400_000))

@@ -224,3 +224,81 @@ begin
   -- Leave the seed as the demo expects: Priya has no active package.
   delete from public.member_packages where id = v_id;
 end $$;
+
+-- ---------------------------------------------------------------------------
+-- Event registration (0005): capacity, waitlist, promotion, guest path
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  aisyah uuid := 'a0000000-0000-4000-8000-000000000001';
+  priya  uuid := 'a0000000-0000-4000-8000-000000000008';
+  marcus uuid := 'a0000000-0000-4000-8000-000000000006';
+  parox uuid := 'e0000000-0000-4000-8000-000000000001';
+  wave1 uuid := 'f0000000-0000-4000-8000-000000000001';
+  wave2 uuid := 'f0000000-0000-4000-8000-000000000002';
+  ff uuid := 'e0000000-0000-4000-8000-000000000002';
+  walk uuid := 'f0000000-0000-4000-8000-000000000004';
+  r record;
+  v_priya uuid;
+  v_marcus uuid;
+  n int;
+begin
+  -- Demo step 3: Aisyah picks Wave 2 and registers; PA.ROX is paid, so pending.
+  perform pg_temp.as_user(aisyah);
+  set local role authenticated;
+  select * into r from public.register_for_event(parox, wave2);
+  perform pg_temp.assert(r.status = 'registered' and r.payment_status = 'pending', 'Aisyah registered, payment pending');
+  begin
+    perform public.register_for_event(parox, wave2);
+    raise exception 'double registration allowed';
+  exception when unique_violation then null;
+  end;
+  select count(*) into n from public.event_registrations where member_id = aisyah and event_id = parox and status <> 'cancelled';
+  perform pg_temp.assert(n = 1, 'one live registration');
+  select registered_count into n from public.event_slot_counts(parox) where slot_id = wave2;
+  perform pg_temp.assert(n = 3, 'Wave 2 count includes Aisyah, got ' || n);
+  perform public.cancel_event_registration(r.registration_id);
+  reset role;
+
+  -- Capacity: shrink Wave 1 to its current 2, then Priya waitlists; cancelling Marcus promotes her.
+  update public.event_slots set capacity = 2 where id = wave1;
+  perform pg_temp.as_user(priya);
+  set local role authenticated;
+  select * into r from public.register_for_event(parox, wave1);
+  perform pg_temp.assert(r.status = 'waitlisted', 'full wave waitlists, got ' || r.status);
+  v_priya := r.registration_id;
+  reset role;
+
+  select id into v_marcus from public.event_registrations where event_id = parox and member_id = marcus and status <> 'cancelled';
+  perform pg_temp.as_user(marcus);
+  set local role authenticated;
+  select * into r from public.cancel_event_registration(v_marcus);
+  perform pg_temp.assert(r.promoted_registration_id = v_priya, 'Priya promoted off the waitlist');
+  perform pg_temp.assert((select status from public.event_registrations where id = v_priya) = 'registered', 'promoted status');
+  reset role;
+
+  -- Restore the seed.
+  delete from public.event_registrations where id = v_priya;
+  update public.event_registrations set status = 'registered' where id = v_marcus;
+  update public.event_slots set capacity = 30 where id = wave1;
+
+  -- Guest path (no auth.uid()): free public event is fine, PA.ROX needs an account.
+  perform pg_temp.as_user(null);
+  select * into r from public.register_for_event(ff, walk, 'Test Guest', 'test.guest@example.com', '+65 9000 0000');
+  perform pg_temp.assert(r.status = 'registered' and r.payment_status = 'n/a', 'guest registered free');
+  begin
+    perform public.register_for_event(ff, walk, 'Test Guest', 'TEST.GUEST@example.com', '+65 9000 0000');
+    raise exception 'duplicate guest email allowed';
+  exception when unique_violation then null;
+  end;
+  begin
+    perform public.register_for_event(parox, wave1, 'Test Guest', 'test.guest@example.com', '+65 9000 0000');
+    raise exception 'guest registered for PA.ROX';
+  exception when raise_exception then
+    perform pg_temp.assert(sqlerrm like '%needs an account%', 'PA.ROX refuses guests, got: ' || sqlerrm);
+  end;
+  delete from public.event_registrations where guest_email = 'test.guest@example.com';
+
+  select registered_count into n from public.event_registration_counts(array[parox]) where event_id = parox;
+  perform pg_temp.assert(n = 6, 'PA.ROX Sep has 6 registered, got ' || n);
+end $$;

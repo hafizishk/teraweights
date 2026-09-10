@@ -59,3 +59,8 @@ export function shortVenue(name: string): string {
 export function firstName(name: string | null | undefined): string {
   return (name ?? "").trim().split(/\s+/)[0] ?? "";
 }
+
+/** "Sat 12 Sep 2026" from a yyyy-MM-dd date (Singapore calendar date). */
+export function formatEventDate(date: string): string {
+  return formatInTimeZone(new Date(`${date}T00:00:00+08:00`), TZ, "EEE d MMM yyyy");
+}

@@ -10,3 +10,10 @@ export function photoForClass(slug: ClassSlug): string {
 }
 
 export const EVENT_PHOTO = "/photos/event.jpg";
+
+export function photoForEvent(type: "parox" | "kampung_grind" | "community", coverUrl?: string | null): string {
+  if (coverUrl) return coverUrl;
+  if (type === "parox") return EVENT_PHOTO;
+  if (type === "kampung_grind") return "/photos/fitness_engine.jpg";
+  return "/photos/energise_west.jpg";
+}
