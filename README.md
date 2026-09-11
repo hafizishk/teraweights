@@ -61,6 +61,10 @@ Demo accounts use plus-aliases of one real inbox, so every sign-in code lands in
 | Faizal Hamid (coach) | hafizishk+faizal@gmail.com | coach |
 | Admin | hafizishk+admin@gmail.com | admin |
 
+## Deployed
+
+Production: https://teraweights.vercel.app (Vercel, tracks `claude/new-session-6k3aes`).
+
 ## Routes
 
 - `/login` — email OTP
