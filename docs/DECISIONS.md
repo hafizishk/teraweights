@@ -127,3 +127,9 @@ The brief put payments out of scope. After reviewing ClassPass, Stackform change
 - **PT demo lives on Marcus, not Aisyah.** The brief describes Aisyah exactly and the demo script toggles her coach on live. Marcus holds a PT 8-pack with five left, three past sessions with notes and one booked, so the screen is full without touching her.
 - **Faizal's open hours in the seed** are Tue and Thu 6 to 9am, Tue 6:30pm before East, and Sat 9 to 11am.
 - **Buying a pack in the app waits for payments.** Until Stripe lands, the PT page lists the packs and says to ask at a session; admin assigns them from the member page like any other package.
+
+## Payments — PayNow through Stripe is back in
+
+- **Two PayNows.** The earlier note dropping PayNow conflated manual PayNow (a QR to the studio's bank account, matched to a member by hand) with PayNow through Stripe, where Checkout shows the QR and the webhook marks the package paid on its own. Only the manual kind creates admin work.
+- **So:** one-off purchases offer PayNow first at 1.3%, cards and wallets alongside at 3.4% plus S$0.50. The trial that rolls into a membership stays cards and wallets, because PayNow cannot be charged again a week later. Renewals charge the saved card or the member buys the next term one-off.
+- **Fees on their prices**, local card versus PayNow: a S$260 pack keeps S$250.66 or S$256.62.
