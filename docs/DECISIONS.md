@@ -139,3 +139,9 @@ The brief put payments out of scope. After reviewing ClassPass, Stackform change
 - **Five tabs, You raised.** Home, Book, You, Feed, Events. You is a circle carrying the member's own photo or initials, lifted above the bar the way the MLS app lifts Clubs. The four words stay in the display face; the circle is the one graphic element in the chrome.
 - **PA.ROX moves under You.** The You page opens with three rows: My PA.ROX, Personal training, Coaches. Demo script step 4 is one tap further: You, then My PA.ROX. Those routes light the You tab so the member never feels lost.
 - **Why not six.** Six words at 390px meant shrinking the type, and the brief's tone is bold. Five with a centred anchor reads as a product rather than a menu.
+
+## Account in the header, You as the training hub
+
+- **Avatar top right.** The member's photo or initials sits next to the credits word in the header on every screen, the way the MLS app puts the person icon beside the menu. Tapping it opens `/app/account`: photo, name, phone, email, zone, weekly target, usual time, roster sharing, install, log out. Who you are, opened rarely.
+- **You is what you train on.** The tab opens with Packages (what you're on, credits left, expiry), then My PA.ROX, Personal training, Coaches. No form fields there any more; one quiet row points to Account. The header word and the Home membership bar still link to You, since that is where packages live.
+- **Why split.** One page carrying settings, packages and three destinations felt like a menu. A photo in the header is the settings entry every app trains people on; the tab is free to be the member's own dashboard.

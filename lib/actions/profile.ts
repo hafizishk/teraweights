@@ -13,6 +13,7 @@ function refresh() {
   revalidatePath("/app");
   revalidatePath("/app/book");
   revalidatePath("/app/profile");
+  revalidatePath("/app/account");
 }
 
 /** First sign-in: zone, days per week, preferred time. */

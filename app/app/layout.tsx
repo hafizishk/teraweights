@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Avatar } from "@/components/ui/Avatar";
 import { createClient } from "@/lib/supabase/server";
 import { getActivePackages } from "@/lib/queries/packages";
 import { BottomTabs } from "@/components/member/BottomTabs";
@@ -30,6 +32,9 @@ export default async function MemberLayout({ children }: { children: React.React
             </a>
           ) : null}
           <HeaderPill packages={packages} />
+          <Link href="/app/account" aria-label="Account" className="rounded-full">
+            <Avatar name={profile?.full_name} src={profile?.avatar_url} size={30} ring={false} />
+          </Link>
         </div>
       </header>
       <Toaster>

@@ -15,7 +15,7 @@ const right = [
 ] as const;
 
 /** You also owns My PA.ROX and Coaches, so those routes light it up. */
-const YOU_ROUTES = ["/app/profile", "/app/parox", "/app/coaches", "/app/pt"];
+const YOU_ROUTES = ["/app/profile", "/app/account", "/app/parox", "/app/coaches", "/app/pt"];
 
 function isActive(href: string, pathname: string): boolean {
   return href === "/app" ? pathname === "/app" : pathname.startsWith(href);
