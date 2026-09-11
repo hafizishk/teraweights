@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { requireOnboarded } from "@/lib/onboarding";
 import { getActivePackages, getMemberPackages } from "@/lib/queries/packages";
@@ -14,6 +15,8 @@ import { HomeHero } from "@/components/member/HomeHero";
 import { PulseTiles } from "@/components/member/PulseTiles";
 import { WhoIsTraining, type TrainingRow } from "@/components/member/WhoIsTraining";
 import { CoachPost, type Post } from "@/components/member/CoachPost";
+import { AvatarRow } from "@/components/ui/Avatar";
+import { getCoaches } from "@/lib/queries/coaches";
 import { MembershipBar } from "@/components/member/MembershipBar";
 import type { Profile, Role } from "@/lib/types";
 
@@ -29,6 +32,7 @@ type BookingJoin = {
 
 type AnnouncementJoin = {
   id: string;
+  slug: string;
   title: string;
   body: string;
   audience: Post["audience"];
@@ -126,13 +130,16 @@ export default async function HomePage() {
   const audiences = ["all", ...(profile?.zone_pref ? [profile.zone_pref] : []), ...(hasPro ? ["prime"] : [])];
   const { data: announcement } = await supabase
     .from("announcements")
-    .select("id, title, body, audience, published_at, author:profiles!announcements_created_by_fkey(full_name, role)")
+    .select("id, slug, title, body, audience, published_at, author:profiles!announcements_created_by_fkey(full_name, role)")
     .in("audience", audiences)
+    .is("archived_at", null)
     .not("published_at", "is", null)
     .lte("published_at", now.toISOString())
     .order("published_at", { ascending: false })
     .limit(1)
     .maybeSingle<AnnouncementJoin>();
+
+  const coaches = await getCoaches(supabase, now);
 
   // Assigned coach, if any.
   const { data: coach } = await supabase
@@ -191,6 +198,7 @@ export default async function HomePage() {
         <CoachPost
           post={{
             id: announcement.id,
+            slug: announcement.slug,
             title: announcement.title,
             body: announcement.body,
             audience: announcement.audience,
@@ -199,6 +207,17 @@ export default async function HomePage() {
             authorRole: announcement.author?.role ?? null,
           }}
         />
+      ) : null}
+
+      {coaches.length > 0 ? (
+        <Link href="/app/coaches" className="rule flex items-center gap-3 py-3">
+          <AvatarRow people={coaches.map((c) => ({ name: c.full_name ?? "Coach", src: c.avatar_url ?? undefined }))} />
+          <span className="flex flex-1 flex-col">
+            <span className="display text-[20px] leading-none">The coaches</span>
+            <span className="text-xs text-muted">Who runs what, and when they are on next</span>
+          </span>
+          <span className="text-muted">›</span>
+        </Link>
       ) : null}
 
       {coach?.coach?.full_name ? (

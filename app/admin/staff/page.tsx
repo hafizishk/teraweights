@@ -5,7 +5,7 @@ import { getStaff, getStaffInvites } from "@/lib/queries/admin";
 import { PageHeader, StatCard } from "@/components/admin/PageHeader";
 import { Table, Th, Td, Tr, EmptyRow } from "@/components/admin/Table";
 import { ActionButton } from "@/components/admin/ActionButton";
-import { InviteStaffForm, StaffTitleForm } from "@/components/admin/StaffForms";
+import { InviteStaffForm, StaffProfileForm } from "@/components/admin/StaffForms";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { cancelInvite, removeStaff } from "@/lib/actions/staff";
@@ -63,7 +63,7 @@ export default async function StaffPage() {
           <thead>
             <tr>
               <Th>Name</Th>
-              <Th>Title</Th>
+              <Th>Title and bio</Th>
               <Th>Role</Th>
               <Th>Sees</Th>
               <Th />
@@ -87,7 +87,7 @@ export default async function StaffPage() {
                     </div>
                   </Td>
                   <Td>
-                    <StaffTitleForm id={s.id} title={s.staff_title} />
+                    <StaffProfileForm id={s.id} title={s.staff_title} bio={s.bio} />
                   </Td>
                   <Td>
                     <div className="flex flex-wrap gap-1.5">

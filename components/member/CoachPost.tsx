@@ -1,8 +1,11 @@
+import Link from "next/link";
 import { formatDate } from "@/lib/format";
+import { postExcerpt } from "@/lib/rules/post-body";
 import type { Role } from "@/lib/types";
 
 export type Post = {
   id: string;
+  slug: string;
   title: string;
   body: string;
   audience: "all" | "east" | "west" | "prime";
@@ -30,7 +33,10 @@ export function CoachPost({ post }: { post: Post }) {
           {author} · {roleLabel(post.authorRole, post.audience)} · {formatDate(post.publishedAt)}
         </p>
         <h2 className="text-[24px] leading-[1]">{post.title}</h2>
-        <p className="text-[15px] leading-relaxed text-paper/85">{post.body}</p>
+        <p className="text-[15px] leading-relaxed text-paper/85">{postExcerpt(post.body, 200)}</p>
+        <Link href={`/app/community/${post.slug}`} className="display w-fit text-lg text-brand">
+          Read on the feed →
+        </Link>
       </div>
     </article>
   );

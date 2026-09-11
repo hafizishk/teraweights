@@ -50,6 +50,8 @@ Agreed with Stackform on 10 Sep 2026. Details and reasoning in `docs/DECISIONS.m
 - **Profile photo.** Optional upload to a Supabase Storage `avatars` bucket, `profiles.avatar_url`. The initials avatar shows the photo wherever a member appears. Built with Profile in Session 4.
 - **Session sheet** gets a duotone photo header and a two-line "what to expect" per class type.
 - **Staff.** A third role, `event_assistant`, sees event registrations only. Roles stay a small enum that RLS understands; `profiles.staff_title` is free text ("Head Coach", "Event Assistant") so new kinds of helper never need a migration. `/admin/staff` invites by email through `admin_allowlist`.
+- **Coaches.** `/app/coaches` lists who runs sessions (photo, `profiles.staff_title`, `profiles.bio`, what they coach, when next); a coach's page lists their upcoming sessions and deep-links into Book with the sheet open. Admins edit title and bio on Staff.
+- **Community feed.** Replaces the Telegram channel. `announcements` is the posts table: `slug`, `category` (announcement, news, recipe, photos), `cover_url`, `images[]`, `archived_at`, plus the existing audience targeting. One-way: coaches post, members read, no comments. `/app/community` is the Feed tab; the newest post is Home's card. Admin composer at `/admin/announcements` uploads to the `posts` bucket. Body is a small markdown subset parsed by `lib/rules/post-body.ts`.
 - **Not taken from ClassPass:** ratings and reviews, save/share on venues, marketing carousels before onboarding, wallet-only integrations without a processor.
 
 ## Seed data is sacred
@@ -67,7 +69,7 @@ Brief section 10. Black base, off-white surfaces, red `#B11226` accent. Barlow C
 - Commit after every session with a message naming the session number.
 
 ## Out of scope — do not build
-Auto-renewing subscriptions (for now), push notifications, chat/feed, ratings/reviews, PT booking or programming, MyZone, public marketing site, native builds, i18n.
+Auto-renewing subscriptions (for now), push notifications, two-way chat or comments, ratings/reviews, PT booking or programming, MyZone, public marketing site, native builds, i18n.
 
 ## When unsure
 Prefer the brief. If the brief is silent, choose the simplest thing that keeps the demo script (section 13) working, and note the decision in `docs/DECISIONS.md`.

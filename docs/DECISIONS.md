@@ -104,3 +104,13 @@ The brief put payments out of scope. After reviewing ClassPass, Stackform change
 - **Eyebrows are sentence case.** Small labels stop being tracked-out uppercase; the condensed display face is loud enough on its own. Display tracking drops to zero for the same reason.
 - **Book reads as a timetable.** Big time on the left, badge and venue in the middle, spots on the right, with a day rule between groups. The same row shape carries "Booked" and "Full" so the eye lands in the same place every time.
 - **Bottom tabs are text-only.** Five condensed labels, the active one in paper, no icons to draw. The brief asks for no emoji in chrome; this goes one step further.
+
+## Session 6 — Coaches and the community feed
+
+- **The feed extends `announcements`.** Two tables that both mean "a coach told the crew something" would drift, and Home's card should be the newest post from the same source. The table gained a slug, a category, a cover, a gallery and an archive timestamp; the published-read policy from Session 1 still gates it, now excluding archived rows. Drafts stay invisible at the database level.
+- **What was taken from the D2D news portal, and what was not.** Taken: RLS as the read contract, slug with collision retry, byte-safe uploads compressed in the browser, date-prefixed random storage paths, the markdown-ish body subset with one shared parser. Not taken: service-role writes (ours run under RLS as the admin), the three-state client cache (server components fetch per request), schema-drift fallback queries (we have a migration runner) and hard delete (published posts archive; only drafts delete).
+- **A slug trigger, not just application code.** The server action derives a slug and retries on collision, and the database does the same on insert, so the seed and any future import cannot create a post without a link.
+- **One-way by design.** Coaches post, members read. Comments would bring moderation, and the brief rules out chat.
+- **Six tabs.** "Feed" earns a tab: it is the Telegram replacement, which is the pitch. Labels shrink one size to fit.
+- **Coaches are derived, not declared.** A coach is anyone with a staff role who has a session in the next four weeks or a bio. Their classes and next session come from the schedule, so the page is never stale. Bio and title are edited on the Staff screen.
+- **A coach's sessions deep-link into Book** with the sheet already open, rather than duplicating the booking sheet on a second screen.

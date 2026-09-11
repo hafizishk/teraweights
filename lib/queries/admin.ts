@@ -88,11 +88,12 @@ export type MemberRow = {
   preferred_time: PreferredTime | null;
   onboarded_at: string | null;
   staff_title: string | null;
+  bio: string | null;
   created_at: string;
 };
 
 const MEMBER_COLUMNS =
-  "id, full_name, email, phone, role, zone_pref, avatar_url, weekly_target, preferred_time, onboarded_at, staff_title, created_at";
+  "id, full_name, email, phone, role, zone_pref, avatar_url, weekly_target, preferred_time, onboarded_at, staff_title, bio, created_at";
 
 /** All profiles, newest first, optionally filtered by a name or email fragment. */
 export async function getMembers(supabase: SupabaseClient, search?: string): Promise<MemberRow[]> {

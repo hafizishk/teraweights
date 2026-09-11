@@ -525,6 +525,22 @@ update public.event_results x
 -- ---------------------------------------------------------------------------
 -- Announcements
 -- ---------------------------------------------------------------------------
+-- Coach bio (Session 6: coaches on the member side).
+update public.profiles
+   set bio = 'Runs Energise East at Bedok Reservoir. Ten years of bootcamps, two PA.ROX podiums, and a firm belief that the warm-up is not optional.',
+       staff_title = 'Head Coach'
+ where id = 'a0000000-0000-4000-8000-000000000003';
+
+-- Community feed posts (Session 6). The three brief announcements stay as they
+-- are; these two give the feed a recipe and a photo post to scroll past.
+insert into public.announcements (title, body, audience, category, cover_url, images, published_at, created_by, created_at) values
+  ('Post-session overnight oats',
+   E'Faizal''s go-to after a Saturday 7.30. Makes two jars.\n\n## You need\n\nRolled oats, a cup. Milk or oat milk, a cup. Greek yoghurt, half a cup. A banana. Chia, a spoon. Honey to taste.\n\n## Do\n\nMash the banana. Stir everything together. Jar it, fridge it, forget it until morning.\n\nProtein from the yoghurt, carbs from the oats, no cooking. Tag Faizal if you make it.',
+   'all', 'recipe', '/photos/fitness_engine.jpg', '{}', pg_temp.sgt('2026-09-06', '10:00'), 'a0000000-0000-4000-8000-000000000003', pg_temp.sgt('2026-09-06', '09:40')),
+  ('Kampung Grind August: the photos',
+   E'Forty-one of you turned up in the rain. Here is the proof.\n\nFull results are in My PA.ROX. Next edition is November.',
+   'all', 'photos', '/photos/event.jpg', '{"/photos/energise_east.jpg","/photos/prime.jpg","/photos/energise_west.jpg"}', pg_temp.sgt('2026-08-24', '18:00'), 'a0000000-0000-4000-8000-000000000099', pg_temp.sgt('2026-08-24', '17:30'));
+
 insert into public.announcements (title, body, audience, published_at, created_by, created_at) values
   ('September bookings are open',
    'The full September schedule is live in the Book tab. Energise East Tue/Thu 8pm and Sat/Sun 7.30am, West Wed 8pm and Sun 8am, PRIME Mon/Wed evenings and Sun mornings. See you out there, Energisers.',

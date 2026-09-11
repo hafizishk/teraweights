@@ -64,23 +64,30 @@ export async function cancelInvite(email: string): Promise<ActionResult> {
   return { ok: true, message: "Invite cancelled." };
 }
 
-/** The job title people actually use. Display only; permissions follow the role. */
-export async function setStaffTitle(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
+/**
+ * The job title shown beside their name, and the bio members read on the
+ * coaches page. Display only; permissions follow the role.
+ */
+export async function setStaffProfile(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
   const guard = await requireAdmin();
   if (!guard.ok) return guard;
 
   const id = String(formData.get("id") ?? "");
   const title = String(formData.get("staff_title") ?? "").trim();
+  const bio = String(formData.get("bio") ?? "").trim();
   if (!id) return { ok: false, error: "Missing staff member." };
+  if (bio.length > 600) return { ok: false, error: "Keep the bio under 600 characters." };
 
   const { error } = await guard.supabase
     .from("profiles")
-    .update({ staff_title: title || null })
+    .update({ staff_title: title || null, bio: bio || null })
     .eq("id", id);
-  if (error) return { ok: false, error: readableError(error.message, "Could not save that title.") };
+  if (error) return { ok: false, error: readableError(error.message, "Could not save that profile.") };
 
   refresh(id);
-  return { ok: true, message: "Title saved." };
+  revalidatePath("/app/coaches");
+  revalidatePath(`/app/coaches/${id}`);
+  return { ok: true, message: "Saved." };
 }
 
 /** Takes someone off the staff. Their bookings and history are untouched. */

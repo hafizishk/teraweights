@@ -12,7 +12,7 @@ const adminNav = [
   { href: "/admin/members", label: "Members" },
   { href: "/admin/packages", label: "Packages" },
   { href: "/admin/events", label: "Events" },
-  { href: "/admin/announcements", label: "Announcements" },
+  { href: "/admin/announcements", label: "Community" },
   { href: "/admin/staff", label: "Staff" },
 ];
 

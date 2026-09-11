@@ -67,7 +67,10 @@ begin
   select count(*) into n from public.event_results group by event_id having count(*) < 10 or count(*) > 15;
   perform pg_temp.assert(n is null, 'results 10–15 per event');
   perform pg_temp.assert((select count(*) from public.event_results where member_id is null) > 0, 'unmatched guests in results');
-  perform pg_temp.assert((select count(*) from public.announcements where published_at is not null) = 3, '3 published announcements');
+  perform pg_temp.assert((select count(*) from public.announcements where published_at is not null and category = 'announcement') = 3, '3 published announcements');
+  perform pg_temp.assert((select count(*) from public.announcements where published_at is not null) = 5, '5 feed posts incl. recipe and photos');
+  perform pg_temp.assert((select count(*) from public.announcements where slug is null or slug = '') = 0, 'every post has a slug');
+  perform pg_temp.assert((select bio from public.profiles where id = 'a0000000-0000-4000-8000-000000000003') is not null, 'Faizal has a bio');
 
   -- Full session with waitlist
   select count(*) into n from public.bookings b join public.sessions s on s.id = b.session_id
@@ -101,7 +104,7 @@ begin
   perform pg_temp.assert((select count(*) from public.profiles where id = priya) = 0, 'RLS: Aisyah cannot read Priya');
   perform pg_temp.assert((select count(*) from public.profiles where id = faizal) = 1, 'RLS: Aisyah can read coach display row');
   perform pg_temp.assert((select count(*) from public.event_results where event_id = 'e0000000-0000-4000-8000-000000000006') = 14, 'RLS: Aisyah sees Apr 2026 leaderboard');
-  perform pg_temp.assert((select count(*) from public.announcements) = 3, 'RLS: published announcements visible');
+  perform pg_temp.assert((select count(*) from public.announcements) = 5, 'RLS: published posts visible, drafts and archived hidden');
   perform pg_temp.assert((select count(*) from public.sessions) > 0, 'RLS: sessions readable');
   perform pg_temp.assert((select count(*) from public.admin_allowlist) = 0, 'RLS: allowlist hidden from members');
   begin
