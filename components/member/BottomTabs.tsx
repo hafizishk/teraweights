@@ -6,16 +6,16 @@ import { Avatar } from "@/components/ui/Avatar";
 
 const left = [
   { href: "/app/book", label: "Book" },
-  { href: "/app/community", label: "Feed" },
+  { href: "/app/packs", label: "Packs" },
 ] as const;
 
 const right = [
+  { href: "/app/community", label: "Feed" },
   { href: "/app/events", label: "Events" },
-  { href: "/app/parox", label: "PA.ROX" },
 ] as const;
 
-/** You is the landing screen; Account, Coaches and PT hang off it, so they light it up too. */
-const YOU_ROUTES = ["/app/account", "/app/coaches", "/app/pt", "/app/profile"];
+/** You is the landing screen; Account, My PA.ROX, Coaches and PT hang off it, so they light it up too. */
+const YOU_ROUTES = ["/app/account", "/app/parox", "/app/coaches", "/app/pt", "/app/profile"];
 
 function isActive(href: string, pathname: string): boolean {
   return pathname.startsWith(href);

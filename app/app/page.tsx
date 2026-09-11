@@ -7,7 +7,7 @@ import { getMyBookings, getSession, getSessionCounts, getSessionsBetween } from 
 import { attendeeLine, attendeePeople, getAttendees, getCommunityPulse } from "@/lib/queries/community";
 import { checkinState } from "@/lib/rules/checkin";
 import { formatInTimeZone } from "date-fns-tz";
-import { TZ, formatTime, formatWeekday } from "@/lib/format";
+import { TZ, formatMmSs, formatTime, formatWeekday } from "@/lib/format";
 import { buildSessionView } from "@/lib/view/session-view";
 import { attendanceStreakWeeks, sessionsThisWeek } from "@/lib/rules/streak";
 import { sgtDate, sgtMidnight, weekOf } from "@/lib/week";
@@ -18,8 +18,11 @@ import { CoachPost, type Post } from "@/components/member/CoachPost";
 import { AvatarRow } from "@/components/ui/Avatar";
 import { getCoaches } from "@/lib/queries/coaches";
 import { activePtPack, getMyPtSessions } from "@/lib/queries/pt";
-import { MembershipBar } from "@/components/member/MembershipBar";
+import { StageNudge } from "@/components/member/StageNudge";
 import { PackagesList } from "@/components/member/PackagesList";
+import { memberStage } from "@/lib/rules/packs";
+import { getMyResults } from "@/lib/queries/results";
+import { personalBest } from "@/lib/rules/results";
 import type { Profile, Role } from "@/lib/types";
 
 export const metadata = { title: "You" };
@@ -67,6 +70,8 @@ export default async function YouPage() {
   ]);
   const hasPro = packages.some((p) => p.tier === "pro");
   const trial = trialEligibility(allPackages, now);
+  const stage = memberStage(allPackages, now);
+  const canBook = packages.some((p) => p.kind !== "pt");
 
   // The member's live bookings: the next one is the hero, attended ones feed the streak.
   const { data: bookingRows } = await supabase
@@ -146,7 +151,8 @@ export default async function YouPage() {
     .limit(1)
     .maybeSingle<AnnouncementJoin>();
 
-  const coaches = await getCoaches(supabase, now);
+  const [coaches, results] = await Promise.all([getCoaches(supabase, now), getMyResults(supabase, uid)]);
+  const pb = personalBest(results);
   const ptPack = activePtPack(allPackages, now);
   const ptSessions = ptPack ? await getMyPtSessions(supabase, uid) : [];
   const nextPt = ptSessions.filter((s) => s.status === "booked" && new Date(s.starts_at).getTime() > now.getTime()).pop() ?? null;
@@ -193,7 +199,10 @@ export default async function YouPage() {
         people={heroPeople}
         attendeeLine={nextView ? attendeeLine(heroAttendees, uid, nextView.bookedCount) : ""}
         checkinOpen={checkinOpen}
+        canBook={canBook}
       />
+
+      <StageNudge stage={stage} trialEligible={trial.eligible} />
 
       <PulseTiles
         trainedThisWeek={pulse.trainedThisWeek}
@@ -218,6 +227,19 @@ export default async function YouPage() {
           }}
         />
       ) : null}
+
+      <Link href="/app/parox" className="rule flex items-center justify-between gap-3 py-3">
+        <span className="flex flex-col gap-0.5">
+          <span className="eyebrow">My PA.ROX</span>
+          <span className="display text-[22px] leading-none">
+            {pb ? `Personal best ${formatMmSs(pb.totalSeconds)}` : results.length > 0 ? `${results.length} events completed` : "No results yet"}
+          </span>
+          <span className="text-xs text-muted">
+            {pb ? `${pb.eventName} · ${results.length} ${results.length === 1 ? "event" : "events"}` : "Results, splits and your streak"}
+          </span>
+        </span>
+        <span className="text-muted">›</span>
+      </Link>
 
       {coaches.length > 0 ? (
         <Link href="/app/coaches" className="rule flex items-center gap-3 py-3">
@@ -250,13 +272,9 @@ export default async function YouPage() {
         </Link>
       )}
 
-      {packages.length === 0 ? <MembershipBar packages={packages} trialEligible={trial.eligible} /> : null}
-
-      {allPackages.length > 0 ? (
-        <div id="packages">
-          <PackagesList packages={allPackages} weeklyTarget={profile?.weekly_target ?? 3} />
-        </div>
-      ) : null}
+      <div id="packages">
+        <PackagesList packages={allPackages} weeklyTarget={profile?.weekly_target ?? 3} />
+      </div>
     </div>
   );
 }

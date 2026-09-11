@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
@@ -134,7 +135,12 @@ export function SessionSheet({
           ) : null}
 
           {view.action === "blocked" ? (
-            <p className="border-l-2 border-brand pl-3 text-sm">{view.entitlementNote}</p>
+            <p className="border-l-2 border-brand pl-3 text-sm">
+              {view.entitlementNote}{" "}
+              <Link href="/app/packs" className="display text-base tracking-wide text-brand">
+                See packs →
+              </Link>
+            </p>
           ) : null}
 
           {confirmingCancel && view.cancelWarning ? (

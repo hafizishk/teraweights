@@ -24,6 +24,7 @@ export function HomeHero({
   people,
   attendeeLine,
   checkinOpen,
+  canBook = true,
 }: {
   firstName: string;
   streakWeeks: number;
@@ -34,6 +35,8 @@ export function HomeHero({
   attendeeLine: string;
   /** Within 30 minutes of the next session's start (rule: lib/rules/checkin.ts). */
   checkinOpen: boolean;
+  /** False when there is no live class package: the open week points at Packs, not Book. */
+  canBook?: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -73,12 +76,22 @@ export function HomeHero({
             {top}
             <div className="flex flex-col gap-2">
               <h1 className="text-[48px] leading-[0.9]">
-                Your week
-                <br />
-                is open
+                {canBook ? (
+                  <>
+                    Your week
+                    <br />
+                    is open
+                  </>
+                ) : (
+                  <>
+                    Ready when
+                    <br />
+                    you are
+                  </>
+                )}
               </h1>
-              <Link href="/app/book" className="display mt-1 text-lg tracking-wide text-brand">
-                Book a session →
+              <Link href={canBook ? "/app/book" : "/app/packs"} className="display mt-1 text-lg tracking-wide text-brand">
+                {canBook ? "Book a session →" : "See packs →"}
               </Link>
             </div>
           </div>

@@ -54,7 +54,7 @@ export type Entitlement =
       message: string;
     };
 
-export const BLOCKED_MESSAGE = "No active membership or credits. Contact us.";
+export const BLOCKED_MESSAGE = "No active membership or credits. Pick a pack and you are in.";
 
 /** Paid and not yet expired. */
 export function isPackageActive(pkg: MemberPackage, now: Date): boolean {

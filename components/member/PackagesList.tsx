@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { formatDate } from "@/lib/format";
 import { describePackage } from "@/lib/rules/package-copy";
@@ -27,7 +28,10 @@ export function PackagesList({ packages, weeklyTarget }: { packages: MemberPacka
       <h2 className="pb-1 text-xl">Packages</h2>
 
       {active.length === 0 && pending.length === 0 ? (
-        <p className="rule py-6 text-sm text-muted">No active package. Contact us to get set up.</p>
+        <Link href="/app/packs" className="rule flex items-center justify-between py-4 text-sm text-muted">
+          <span>No active package.</span>
+          <span className="display text-lg text-brand">See packs →</span>
+        </Link>
       ) : null}
 
       {active.map((p) => (
