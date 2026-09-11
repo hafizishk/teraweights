@@ -153,7 +153,7 @@ export function AnnouncementForm({ announcements }: { announcements: Announcemen
                 <Tr key={a.id} className={a.id === selected ? "bg-ink-2" : ""}>
                   <Td>
                     <span className="text-paper">{a.title}</span>
-                    <span className="block max-w-md truncate text-xs text-muted">{a.body}</span>
+                    <span className="block max-w-xs truncate text-xs text-muted">{a.body}</span>
                   </Td>
                   <Td>
                     <Badge>{AUDIENCE_LABELS[a.audience]}</Badge>
@@ -166,8 +166,8 @@ export function AnnouncementForm({ announcements }: { announcements: Announcemen
                       <span className="text-muted">Draft</span>
                     )}
                   </Td>
-                  <Td className="text-muted">{formatDate(a.created_at)}</Td>
-                  <Td>
+                  <Td className="whitespace-nowrap text-muted">{formatDate(a.created_at)}</Td>
+                  <Td className="whitespace-nowrap">
                     <span className="flex justify-end gap-2">
                       <button
                         type="button"

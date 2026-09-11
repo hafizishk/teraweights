@@ -22,7 +22,7 @@ export function ClassBadge({ slug, className = "" }: { slug: ClassSlug; classNam
   return (
     <span
       title={slug === "fitness_engine" ? "Fitness Engine" : undefined}
-      className={`display inline-flex h-5 items-center rounded-sm px-1.5 text-[12px] leading-none tracking-wide ${classStyles[slug]} ${className}`}
+      className={`display inline-flex h-5 items-center whitespace-nowrap rounded-sm px-1.5 text-[12px] leading-none tracking-wide ${classStyles[slug]} ${className}`}
     >
       {classLabels[slug]}
     </span>
@@ -33,7 +33,7 @@ export function ClassBadge({ slug, className = "" }: { slug: ClassSlug; classNam
 export function Badge({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <span
-      className={`inline-flex h-5 items-center rounded-sm border border-ink-3 px-1.5 text-[11px] font-medium text-paper ${className}`}
+      className={`inline-flex h-5 items-center whitespace-nowrap rounded-sm border border-ink-3 px-1.5 text-[11px] font-medium text-paper ${className}`}
     >
       {children}
     </span>
