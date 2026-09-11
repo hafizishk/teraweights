@@ -12,9 +12,13 @@
     "db:reset": "supabase db reset",
     "db:push": "supabase db push",
     "db:check": "bash scripts/db-check.sh",
-    "icons": "bash scripts/icons/build-icons.sh"
+    "icons": "bash scripts/icons/build-icons.sh",
+    "ios:sync": "cap sync ios",
+    "ios:open": "cap open ios"
   },
   "dependencies": {
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/ios": "^8.5.2",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.49.4",
     "date-fns": "^4.1.0",
@@ -26,6 +30,7 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.2",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",

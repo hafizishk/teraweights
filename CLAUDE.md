@@ -10,7 +10,7 @@ Member PWA + admin portal for Teraweights, a Singapore outdoor fitness community
 - Supabase: Postgres, Auth (email OTP), RLS on every table, Storage for images
 - `@supabase/ssr` for server/client helpers. Server actions for all writes.
 - PWA: manifest + service worker. Mobile-first member app at `/app/*`, desktop admin at `/admin/*`.
-- Deploy: Vercel.
+- Deploy: Vercel. iOS: Capacitor shell over the deployed URL, see `docs/IOS-BUILD.md`.
 
 ## Structure
 ```
