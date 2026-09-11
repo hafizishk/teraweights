@@ -15,7 +15,7 @@ export default async function LoginPage({
   return (
     <main className="safe-top safe-bottom mx-auto flex min-h-screen w-full max-w-[480px] flex-col justify-center gap-8 px-6 py-10">
       <div className="flex flex-col gap-3">
-        <Wordmark className="text-4xl" />
+        <Wordmark className="text-[44px]" />
         <div className="heartbeat w-40" />
         <p className="text-sm text-muted">Sign in with your email. We&apos;ll send a 6-digit code.</p>
       </div>

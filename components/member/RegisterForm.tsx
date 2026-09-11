@@ -27,7 +27,7 @@ function SlotPicker({
   if (slots.length === 0) return null;
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="mb-1 text-xs uppercase tracking-widest text-muted">Pick a slot</legend>
+      <legend className="eyebrow mb-1">Pick a wave</legend>
       {slots.map((s) => {
         const left = Math.max(0, s.capacity - s.registered);
         const full = left === 0;
@@ -35,8 +35,8 @@ function SlotPicker({
         return (
           <label
             key={s.id}
-            className={`flex cursor-pointer items-center gap-3 rounded-md border px-4 py-3 ${
-              selected ? "border-brand bg-brand/10" : "border-ink-3 bg-ink-2 hover:border-muted"
+            className={`rule flex cursor-pointer items-center gap-3 py-3 ${
+              selected ? "border-l-2 border-l-brand pl-3" : ""
             }`}
           >
             <input
@@ -48,7 +48,7 @@ function SlotPicker({
               className="h-4 w-4 accent-[#b11226]"
             />
             <span className="flex flex-1 flex-col">
-              <span className="display text-lg leading-none">{s.label}</span>
+              <span className="display text-[20px] leading-none">{s.label}</span>
               <span className="text-xs text-muted">Starts {formatTime(s.starts_at)}</span>
             </span>
             <span className={`text-xs ${full ? "text-brand" : "text-muted"}`}>

@@ -1,10 +1,10 @@
 import type { HTMLAttributes, ThHTMLAttributes, TdHTMLAttributes } from "react";
 
-/** Desktop-first table primitives for the admin portal. */
+/** Desktop-first table primitives. Rules, not a rounded frame: a ledger. */
 
 export function Table({ className = "", ...props }: HTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-ink-3">
+    <div className="overflow-x-auto">
       <table className={`w-full border-collapse text-sm ${className}`} {...props} />
     </div>
   );
@@ -13,14 +13,16 @@ export function Table({ className = "", ...props }: HTMLAttributes<HTMLTableElem
 export function Th({ className = "", ...props }: ThHTMLAttributes<HTMLTableCellElement>) {
   return (
     <th
-      className={`border-b border-ink-3 bg-ink-2 px-3 py-2 text-left text-xs font-medium uppercase tracking-widest text-muted ${className}`}
+      className={`border-b-2 border-ink-3 px-3 py-2 text-left text-xs font-medium text-muted first:pl-0 last:pr-0 ${className}`}
       {...props}
     />
   );
 }
 
 export function Td({ className = "", ...props }: TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={`border-b border-ink-3 px-3 py-2 align-middle ${className}`} {...props} />;
+  return (
+    <td className={`border-b border-ink-3 px-3 py-2.5 align-middle first:pl-0 last:pr-0 ${className}`} {...props} />
+  );
 }
 
 export function Tr({ className = "", ...props }: HTMLAttributes<HTMLTableRowElement>) {
@@ -31,7 +33,7 @@ export function Tr({ className = "", ...props }: HTMLAttributes<HTMLTableRowElem
 export function EmptyRow({ colSpan, children }: { colSpan: number; children: React.ReactNode }) {
   return (
     <tr>
-      <td colSpan={colSpan} className="px-3 py-8 text-center text-sm text-muted">
+      <td colSpan={colSpan} className="border-b border-ink-3 py-8 text-center text-sm text-muted">
         {children}
       </td>
     </tr>

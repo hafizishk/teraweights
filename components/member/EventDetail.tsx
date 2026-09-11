@@ -23,10 +23,10 @@ export function EventDetail({
       <section className="-mx-4 -mt-4">
         <DuotonePhoto src={photoForEvent(event.type, event.cover_url)} className="h-[260px]" priority>
           <div className="flex flex-col gap-2 p-4">
-            <span className={`text-xs uppercase tracking-widest ${event.type === "parox" ? "text-prime" : "text-paper/80"}`}>
+            <span className={`eyebrow ${event.type === "parox" ? "text-prime" : "text-paper/80"}`}>
               {typeLabel(event.type)} · {formatEventDate(event.event_date)}
             </span>
-            <h1 className="text-[36px] leading-[0.95]">{event.name}</h1>
+            <h1 className="text-[40px] leading-[0.9]">{event.name}</h1>
             {event.partner_line ? <p className="text-sm text-paper/85">{event.partner_line}</p> : null}
           </div>
         </DuotonePhoto>

@@ -1,23 +1,14 @@
 /* eslint-disable @next/next/no-img-element */
 /**
- * Avatar: the member's photo when they have one, otherwise initials on a
- * colour derived from the name so it is stable across renders.
+ * Avatar: the member's photo when they have one, otherwise initials. One
+ * neutral colour for everyone; the photo is the personality, not the fill.
  */
-const PALETTE = ["#2b6cb0", "#b11226", "#3a3a3a", "#f2c230"];
-const INK_ON = new Set(["#f2c230"]);
-
 export type Person = { name: string; src?: string | null };
 
 export function initialsOf(name: string | null | undefined): string {
   const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
   return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
-}
-
-function colourFor(name: string): string {
-  let h = 0;
-  for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  return PALETTE[h % PALETTE.length];
 }
 
 export function Avatar({
@@ -34,8 +25,7 @@ export function Avatar({
   className?: string;
 }) {
   const label = name ?? "Energiser";
-  const bg = colourFor(label);
-  const ringClass = ring ? "border-2 border-ink-2" : "";
+  const ringClass = ring ? "border-2 border-ink" : "";
 
   if (src) {
     return (
@@ -55,14 +45,8 @@ export function Avatar({
     <span
       aria-label={label}
       title={label}
-      className={`display inline-flex shrink-0 items-center justify-center rounded-full leading-none ${ringClass} ${className}`}
-      style={{
-        width: size,
-        height: size,
-        background: bg,
-        color: INK_ON.has(bg) ? "#0b0b0b" : "#f4f1ec",
-        fontSize: Math.round(size * 0.4),
-      }}
+      className={`display inline-flex shrink-0 items-center justify-center rounded-full bg-ink-3 leading-none text-paper ${ringClass} ${className}`}
+      style={{ width: size, height: size, fontSize: Math.round(size * 0.4) }}
     >
       {initialsOf(name)}
     </span>

@@ -1,9 +1,19 @@
 import type { HTMLAttributes } from "react";
 
-export function Card({ className = "", ...props }: HTMLAttributes<HTMLDivElement>) {
+/**
+ * A section of content. By default it is ruled, not boxed: a hairline above,
+ * content flush with the page edge, the black showing through. `raised` is
+ * for the few things that are genuinely objects on top of the page, such as
+ * a bottom sheet or an alert.
+ */
+export function Card({
+  className = "",
+  raised = false,
+  ...props
+}: HTMLAttributes<HTMLDivElement> & { raised?: boolean }) {
   return (
     <div
-      className={`rounded-lg border border-ink-3 bg-ink-2 p-4 ${className}`}
+      className={raised ? `rounded-md bg-ink-2 p-4 ${className}` : `rule pt-4 ${className}`}
       {...props}
     />
   );

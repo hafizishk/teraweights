@@ -15,7 +15,6 @@ import { PulseTiles } from "@/components/member/PulseTiles";
 import { WhoIsTraining, type TrainingRow } from "@/components/member/WhoIsTraining";
 import { CoachPost, type Post } from "@/components/member/CoachPost";
 import { MembershipBar } from "@/components/member/MembershipBar";
-import { Card, CardTitle } from "@/components/ui/Card";
 import type { Profile, Role } from "@/lib/types";
 
 export const metadata = { title: "Home" };
@@ -167,7 +166,7 @@ export default async function HomePage() {
   const firstName = profile?.full_name?.split(" ")[0] ?? "Energiser";
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       <HomeHero
         firstName={firstName}
         streakWeeks={streakWeeks}
@@ -203,11 +202,11 @@ export default async function HomePage() {
       ) : null}
 
       {coach?.coach?.full_name ? (
-        <Card className="flex flex-col gap-1">
-          <p className="text-xs uppercase tracking-widest text-muted">My coach</p>
-          <CardTitle>{coach.coach.full_name}</CardTitle>
+        <div className="rule flex flex-col gap-1 py-3">
+          <span className="eyebrow">My coach</span>
+          <span className="display text-[22px] leading-none">{coach.coach.full_name}</span>
           <p className="text-sm text-muted">Next PT session: contact your coach.</p>
-        </Card>
+        </div>
       ) : null}
 
       <MembershipBar packages={packages} trialEligible={trial.eligible} />

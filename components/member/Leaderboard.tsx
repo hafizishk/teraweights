@@ -14,6 +14,7 @@ const DIVISIONS: { key: LeaderboardRow["division"] | "all"; label: string }[] = 
 
 const ORDER: Record<LeaderboardRow["division"], number> = { open: 0, doubles: 1, relay: 2, family: 3 };
 
+/** A results sheet: rank, name, time, one hairline per row. Your own row is marked in red. */
 export function Leaderboard({ rows, meId }: { rows: LeaderboardRow[]; meId: string }) {
   const present = new Set(rows.map((r) => r.division));
   const chips = DIVISIONS.filter((d) => d.key === "all" || present.has(d.key));
@@ -29,52 +30,47 @@ export function Leaderboard({ rows, meId }: { rows: LeaderboardRow[]; meId: stri
   }, [rows, division]);
 
   if (rows.length === 0) {
-    return (
-      <p className="rounded-lg border border-dashed border-ink-3 px-4 py-8 text-center text-sm text-muted">
-        Results are visible to Energisers who took part.
-      </p>
-    );
+    return <p className="rule py-8 text-sm text-muted">Results are visible to Energisers who took part.</p>;
   }
 
   return (
     <div className="flex flex-col gap-3">
-      <nav aria-label="Division" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
-        {chips.map(({ key, label }) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setDivision(key)}
-            aria-pressed={key === division}
-            className={`display shrink-0 rounded-full border px-3 py-1.5 text-base leading-none tracking-wide ${
-              key === division ? "border-brand bg-brand text-paper" : "border-ink-3 text-muted hover:text-paper"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+      <nav aria-label="Division" className="-mx-4 flex gap-5 overflow-x-auto border-b border-ink-3 px-4">
+        {chips.map(({ key, label }) => {
+          const active = key === division;
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setDivision(key)}
+              aria-pressed={active}
+              className={`display -mb-px shrink-0 border-b-2 pb-2 text-lg leading-none tracking-wide ${
+                active ? "border-brand text-paper" : "border-transparent text-muted hover:text-paper"
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
       </nav>
 
-      <ol className="flex flex-col gap-1">
+      <ol>
         {shown.map((r) => {
           const me = r.member_id === meId;
           return (
             <li
               key={r.id}
-              className={`flex items-center gap-3 rounded-md px-3 py-2.5 ${
-                me ? "border border-brand bg-brand/10" : "border border-transparent"
-              }`}
+              className={`rule flex items-center gap-3 py-2.5 ${me ? "border-l-2 border-l-brand pl-3" : ""}`}
             >
-              <span className="display w-8 text-xl leading-none text-muted">{r.rank ?? "–"}</span>
+              <span className="display tnum w-8 text-xl leading-none text-muted">{r.rank ?? "–"}</span>
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className={`truncate text-sm ${me ? "font-semibold" : ""}`}>
                   {r.display_name}
                   {me ? " (you)" : ""}
                 </span>
-                {division === "all" ? (
-                  <span className="text-xs capitalize text-muted">{r.division}</span>
-                ) : null}
+                {division === "all" ? <span className="eyebrow capitalize">{r.division}</span> : null}
               </span>
-              <span className="display text-xl leading-none">{formatMmSs(r.total_seconds)}</span>
+              <span className="display tnum text-[22px] leading-none">{formatMmSs(r.total_seconds)}</span>
             </li>
           );
         })}

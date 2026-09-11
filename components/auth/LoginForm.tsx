@@ -5,7 +5,7 @@ import { sendOtp, verifyOtp, type AuthState } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/Button";
 
 const inputClass =
-  "h-12 w-full rounded-md border border-ink-3 bg-ink-2 px-4 text-base text-paper placeholder:text-muted focus:border-brand focus:outline-none";
+  "h-12 w-full border-0 border-b-2 border-ink-3 bg-transparent px-0 text-lg text-paper placeholder:text-muted focus:border-paper focus:outline-none";
 
 export function LoginForm({ next, initialError }: { next?: string; initialError?: string }) {
   const [state, action, pending] = useActionState<AuthState, FormData>(
@@ -50,7 +50,7 @@ export function LoginForm({ next, initialError }: { next?: string; initialError?
     <form action={action} className="flex flex-col gap-4">
       {next ? <input type="hidden" name="next" value={next} /> : null}
       <label className="flex flex-col gap-2">
-        <span className="text-sm text-muted">Email</span>
+        <span className="eyebrow">Email</span>
         <input
           name="email"
           type="email"

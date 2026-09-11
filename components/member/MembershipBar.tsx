@@ -8,7 +8,7 @@ function daysLeft(expiresAt: string, now = new Date()): number {
   return Math.floor((new Date(expiresAt).getTime() - now.getTime()) / 86_400_000);
 }
 
-/** One slim line for the member's packages; the full breakdown lives in Profile. */
+/** One ruled line for the member's packages; the full breakdown lives in Profile. */
 export function MembershipBar({
   packages,
   trialEligible = false,
@@ -24,11 +24,11 @@ export function MembershipBar({
   if (!membership && credits === 0) {
     if (trialEligible) {
       return (
-        <div className="flex flex-col gap-3 rounded-lg border border-brand/40 bg-brand/10 p-4">
-          <div className="flex flex-col gap-1">
-            <span className="display text-xl leading-tight">Try a week on us</span>
+        <div className="rule flex flex-col gap-3 pt-4">
+          <div className="flex flex-col gap-1 border-l-2 border-brand pl-3">
+            <span className="display text-[26px] leading-none">A week on us</span>
             <span className="text-sm text-muted">
-              {TRIAL_DAYS} days of Energise East and West, any session. No card, no catch.
+              {TRIAL_DAYS} days of Energise East and West, any session.
             </span>
           </div>
           <StartTrialButton />
@@ -36,15 +36,12 @@ export function MembershipBar({
       );
     }
     return (
-      <Link
-        href="/app/profile"
-        className="flex items-center justify-between rounded-lg border border-brand/40 bg-brand/10 px-4 py-3"
-      >
+      <Link href="/app/profile" className="rule flex items-center justify-between py-3">
         <span className="flex flex-col gap-0.5">
-          <span className="display text-base leading-tight">No active package</span>
-          <span className="text-xs text-muted">Contact us to get set up</span>
+          <span className="display text-lg leading-none text-brand">No active package</span>
+          <span className="eyebrow">Contact us to get set up</span>
         </span>
-        <span className="text-xs text-muted underline underline-offset-4">Details</span>
+        <span className="display text-base text-muted">Details →</span>
       </Link>
     );
   }
@@ -65,15 +62,12 @@ export function MembershipBar({
     : "Credits";
 
   return (
-    <Link
-      href="/app/profile"
-      className="flex items-center justify-between rounded-lg border border-ink-3 px-4 py-3 hover:border-muted"
-    >
+    <Link href="/app/profile" className="rule flex items-center justify-between py-3">
       <span className="flex flex-col gap-0.5">
-        <span className="display text-base leading-tight">{title}</span>
-        <span className="text-xs text-muted">{parts.join(" · ")}</span>
+        <span className="display text-lg leading-none">{title}</span>
+        <span className="eyebrow">{parts.join(" · ")}</span>
       </span>
-      <span className="text-xs text-muted underline underline-offset-4">Details</span>
+      <span className="display text-base text-muted">Details →</span>
     </Link>
   );
 }

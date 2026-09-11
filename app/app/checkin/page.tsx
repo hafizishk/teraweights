@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { checkIn } from "@/lib/actions/checkin";
-import { Card, CardTitle } from "@/components/ui/Card";
 
 export const metadata = { title: "Check in" };
 
@@ -15,14 +14,14 @@ export default async function CheckinPage({
   if (!s || !t) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 className="text-3xl">Check in</h1>
-        <Card className="flex flex-col gap-2">
-          <CardTitle>Scan the session QR</CardTitle>
+        <h1 className="text-[34px] leading-none">Check in</h1>
+        <div className="rule flex flex-col gap-2 pt-4">
+          <span className="display text-[22px] leading-none">Scan the session QR</span>
           <p className="text-sm text-muted">Your coach shows it at the start. Point your camera at it, or use the scanner.</p>
-          <Link href="/app/checkin/scan" className="display text-lg text-brand">
+          <Link href="/app/checkin/scan" className="display text-lg tracking-wide text-brand">
             Open scanner →
           </Link>
-        </Card>
+        </div>
       </div>
     );
   }
@@ -30,24 +29,28 @@ export default async function CheckinPage({
   const result = await checkIn(s, t);
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-3xl">Check in</h1>
+    <div className="flex flex-col gap-6">
       {result.ok ? (
-        <Card className="flex flex-col gap-2 border-paper/30">
-          <span className="display text-[56px] leading-none">✓</span>
-          <CardTitle>{result.alreadyIn ? "Already in" : "You're in"}</CardTitle>
-          <p className="text-sm text-muted">{result.message}</p>
-        </Card>
+        <div className="flex flex-col gap-2 pt-6">
+          <span className="eyebrow">Check in</span>
+          <h1 className="text-[64px] leading-[0.88]">
+            {result.alreadyIn ? "Already" : "You're"}
+            <br />
+            in
+          </h1>
+          <p className="border-l-2 border-brand pl-3 text-sm text-paper/85">{result.message}</p>
+        </div>
       ) : (
-        <Card className="flex flex-col gap-2 border-brand/40">
-          <CardTitle>Not checked in</CardTitle>
-          <p className="text-sm">{result.error}</p>
-          <Link href="/app/checkin/scan" className="display text-lg text-brand">
+        <div className="flex flex-col gap-2 pt-6">
+          <span className="eyebrow">Check in</span>
+          <h1 className="text-[44px] leading-[0.9]">Not checked in</h1>
+          <p className="border-l-2 border-brand pl-3 text-sm">{result.error}</p>
+          <Link href="/app/checkin/scan" className="display mt-2 text-lg tracking-wide text-brand">
             Scan again →
           </Link>
-        </Card>
+        </div>
       )}
-      <Link href="/app" className="text-sm text-muted underline underline-offset-4">
+      <Link href="/app" className="display text-base tracking-wide text-muted">
         Back to Home
       </Link>
     </div>

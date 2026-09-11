@@ -39,8 +39,25 @@ h3,
 .display {
   font-family: var(--font-display);
   font-weight: 700;
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
   text-transform: uppercase;
+}
+
+/* Big numerals and times line up when they are tabular. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The app is ruled, not boxed: sections divide with a hairline, not a card. */
+.rule {
+  border-top: 1px solid var(--color-ink-3);
+}
+
+/* A small quiet label. Sentence case; never tracked-out uppercase. */
+.eyebrow {
+  font-size: 12px;
+  line-height: 1.2;
+  color: var(--color-muted);
 }
 
 /* Mobile safe areas for the installed PWA */

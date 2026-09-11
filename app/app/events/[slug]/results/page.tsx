@@ -30,19 +30,19 @@ export default async function EventResultsPage({ params }: { params: Promise<{ s
 
   return (
     <div className="flex flex-col gap-5">
-      <Link href="/app/events" className="text-sm text-muted underline-offset-4 hover:underline">
+      <Link href="/app/events" className="eyebrow hover:text-paper">
         ← Events
       </Link>
       <div className="flex flex-col gap-1">
-        <span className={`text-xs uppercase tracking-widest ${event.type === "parox" ? "text-prime" : "text-muted"}`}>
+        <span className={`eyebrow ${event.type === "parox" ? "text-prime" : ""}`}>
           {typeLabel(event.type)} · {formatEventDate(event.event_date)}
         </span>
-        <h1 className="text-3xl leading-[0.95]">{event.name}</h1>
+        <h1 className="text-[34px] leading-[0.92]">{event.name}</h1>
         <p className="text-sm text-muted">Results</p>
       </div>
 
       {mine ? (
-        <Link href={`/app/parox/${event.slug}`} className="display text-lg text-brand">
+        <Link href={`/app/parox/${event.slug}`} className="display text-lg tracking-wide text-brand">
           Your splits →
         </Link>
       ) : null}

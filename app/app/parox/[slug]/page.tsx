@@ -6,7 +6,6 @@ import { getMyResults } from "@/lib/queries/results";
 import { formatDelta, withDeltas } from "@/lib/rules/results";
 import { formatEventDate, formatMmSs } from "@/lib/format";
 import { SplitsBars } from "@/components/member/SplitsBars";
-import { Card } from "@/components/ui/Card";
 
 export const metadata = { title: "Station splits" };
 
@@ -25,18 +24,18 @@ export default async function ParoxResultPage({ params }: { params: Promise<{ sl
 
   return (
     <div className="flex flex-col gap-5">
-      <Link href="/app/parox" className="text-sm text-muted underline-offset-4 hover:underline">
+      <Link href="/app/parox" className="eyebrow hover:text-paper">
         ← My PA.ROX
       </Link>
 
       <div className="flex flex-col gap-1">
-        <span className="text-xs uppercase tracking-widest text-muted">
+        <span className="eyebrow">
           {formatEventDate(row.eventDate)} · {row.division}
           {row.rank ? ` · rank ${row.rank}` : ""}
         </span>
-        <h1 className="text-3xl leading-[0.95]">{row.eventName}</h1>
+        <h1 className="text-[34px] leading-[0.92]">{row.eventName}</h1>
         <div className="mt-1 flex items-baseline gap-3">
-          <span className="display text-[48px] leading-none">{formatMmSs(row.totalSeconds)}</span>
+          <span className="display tnum text-[64px] leading-[0.88]">{formatMmSs(row.totalSeconds)}</span>
           {row.isPersonalBest ? <span className="display text-lg text-prime">PB</span> : null}
           {row.deltaSeconds !== null ? (
             <span className="text-sm text-muted">{formatDelta(row.deltaSeconds)} vs previous</span>
@@ -45,17 +44,15 @@ export default async function ParoxResultPage({ params }: { params: Promise<{ sl
       </div>
 
       {row.splits && row.splits.length > 0 ? (
-        <Card className="flex flex-col gap-3">
-          <h2 className="text-xl">Station splits</h2>
+        <section>
+          <h2 className="pb-1 text-xl">Station splits</h2>
           <SplitsBars splits={row.splits} />
-        </Card>
+        </section>
       ) : (
-        <p className="rounded-lg border border-dashed border-ink-3 px-4 py-6 text-center text-sm text-muted">
-          No station splits were recorded for this edition.
-        </p>
+        <p className="rule py-6 text-sm text-muted">No station splits were recorded for this edition.</p>
       )}
 
-      <Link href={`/app/events/${row.eventSlug}/results`} className="display text-lg text-brand">
+      <Link href={`/app/events/${row.eventSlug}/results`} className="display text-lg tracking-wide text-brand">
         Full leaderboard →
       </Link>
     </div>

@@ -13,7 +13,7 @@ import { firstName as first, formatTime, formatWeekday, shortVenue } from "@/lib
 import { photoForClass } from "@/lib/photos";
 import type { SessionView } from "@/lib/view/session-view";
 
-const linkClass = "text-sm text-muted underline underline-offset-4 disabled:opacity-50";
+const quietAction = "display text-base tracking-wide text-muted hover:text-paper disabled:opacity-50";
 
 export function HomeHero({
   firstName,
@@ -60,7 +60,7 @@ export function HomeHero({
 
   const top = (
     <div className="flex flex-col gap-3">
-      <span className="text-sm text-paper/85">Hey {firstName}</span>
+      <span className="text-sm text-paper/80">Hey {firstName}</span>
       <StreakRing streakWeeks={streakWeeks} sessionsThisWeek={sessionsThisWeek} weeklyTarget={weeklyTarget} />
     </div>
   );
@@ -72,13 +72,12 @@ export function HomeHero({
           <div className="flex h-full flex-col justify-between p-4">
             {top}
             <div className="flex flex-col gap-2">
-              <h1 className="text-[40px] leading-[0.92]">
+              <h1 className="text-[48px] leading-[0.9]">
                 Your week
                 <br />
                 is open
               </h1>
-              <p className="text-sm text-paper/85">Pick a session and lock it in.</p>
-              <Link href="/app/book" className="display mt-1 text-lg text-brand">
+              <Link href="/app/book" className="display mt-1 text-lg tracking-wide text-brand">
                 Book a session →
               </Link>
             </div>
@@ -92,13 +91,16 @@ export function HomeHero({
   const attended = view.bookingStatus === "attended";
 
   return (
-    <section className="-mx-4 -mt-4 flex flex-col gap-3">
+    <section className="-mx-4 -mt-4 flex flex-col">
       <DuotonePhoto src={photoForClass(view.classSlug)} className="h-[380px]" priority>
         <div className="flex h-full flex-col justify-between p-4">
           {top}
           <div className="flex flex-col gap-2">
-            <ClassBadge slug={view.classSlug} className="self-start" />
-            <h1 className="text-[44px] leading-[0.92]">
+            <div className="flex items-center gap-2">
+              <ClassBadge slug={view.classSlug} />
+              <span className="eyebrow text-paper/80">Your next session</span>
+            </div>
+            <h1 className="tnum text-[52px] leading-[0.88]">
               {formatWeekday(view.startsAt)}
               <br />
               {formatTime(view.startsAt)}
@@ -108,23 +110,23 @@ export function HomeHero({
               {coach}
             </p>
             <div className="mt-1 flex items-center gap-2.5">
-              <AvatarRow people={people} />
-              <span className="text-[13px]">{attendeeLine}</span>
+              <AvatarRow people={people} size={24} />
+              <span className="text-[13px] text-paper/85">{attendeeLine}</span>
             </div>
           </div>
         </div>
       </DuotonePhoto>
 
       {confirming && view.cancelWarning ? (
-        <p role="alert" className="mx-4 rounded-md border border-brand/40 bg-brand/10 px-3 py-2 text-sm">
+        <p role="alert" className="mx-4 mt-3 border-l-2 border-brand pl-3 text-sm">
           {view.cancelWarning} Tap again to confirm.
         </p>
       ) : null}
 
       {attended ? (
-        <p className="mx-4 rounded-md border border-ink-3 bg-ink-2 px-3 py-2 text-sm">You&apos;re checked in.</p>
+        <p className="mx-4 mt-3 border-l-2 border-paper/60 pl-3 text-sm text-paper/85">You&apos;re checked in.</p>
       ) : checkinOpen ? (
-        <div className="mx-4">
+        <div className="mx-4 mt-3">
           <Link
             href="/app/checkin/scan"
             className="display flex h-12 w-full items-center justify-center rounded-md bg-brand text-lg tracking-wide text-paper hover:bg-brand-2"
@@ -134,13 +136,13 @@ export function HomeHero({
         </div>
       ) : null}
 
-      <div className="flex gap-4 px-4">
+      <div className="flex items-center gap-4 px-4 pt-3">
         {!attended ? (
-          <button type="button" onClick={onCancel} disabled={pending} className={linkClass}>
-            {pending ? "Cancelling…" : confirming ? "Cancel anyway" : "Cancel"}
+          <button type="button" onClick={onCancel} disabled={pending} className={quietAction}>
+            {pending ? "Cancelling…" : confirming ? "Cancel anyway" : "Cancel booking"}
           </button>
         ) : null}
-        <Link href="/app/events" className={linkClass}>
+        <Link href="/app/events" className={quietAction}>
           Invite a friend
         </Link>
       </div>

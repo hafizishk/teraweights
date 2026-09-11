@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { MemberPackageRow } from "@/lib/queries/packages";
 
-/** Credits pill in the member header (scope change): "6 credits", "Weekday", "Free week". */
+/** Credits in the member header (scope change): "6 credits", "Weekday", "Free week". */
 export function headerPillLabel(packages: MemberPackageRow[]): string {
   const membership = packages.find((p) => p.kind === "membership");
   const credits = packages
@@ -18,15 +18,14 @@ export function headerPillLabel(packages: MemberPackageRow[]): string {
   return "No package";
 }
 
+/** Set as a word in the display face, not a pill. Red only when there is nothing. */
 export function HeaderPill({ packages }: { packages: MemberPackageRow[] }) {
   const label = headerPillLabel(packages);
   const empty = label === "No package";
   return (
     <Link
       href="/app/profile"
-      className={`display rounded-full border px-2.5 py-1 text-sm leading-none tracking-wider ${
-        empty ? "border-brand/50 text-brand" : "border-ink-3 text-paper"
-      }`}
+      className={`display tnum text-base leading-none tracking-wide ${empty ? "text-brand" : "text-paper"}`}
     >
       {label}
     </Link>

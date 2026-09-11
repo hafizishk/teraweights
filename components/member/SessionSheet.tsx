@@ -80,7 +80,7 @@ export function SessionSheet({
         <DuotonePhoto src={photoForClass(view.classSlug)} fadeTo="card" sizes="480px" className="h-[150px]">
           <div className="flex flex-col gap-2 p-5 pb-2">
             <ClassBadge slug={view.classSlug} className="self-start" />
-            <h2 className="text-[26px] leading-none">{view.className}</h2>
+            <h2 className="text-[30px] leading-none">{view.className}</h2>
             <p className="text-sm text-paper/85">
               {formatDay(view.startsAt)} · {formatTime(view.startsAt)}–{formatTime(view.endsAt)}
             </p>
@@ -134,13 +134,11 @@ export function SessionSheet({
           ) : null}
 
           {view.action === "blocked" ? (
-            <p className="rounded-md border border-brand/40 bg-brand/10 px-3 py-2 text-sm">
-              {view.entitlementNote}
-            </p>
+            <p className="border-l-2 border-brand pl-3 text-sm">{view.entitlementNote}</p>
           ) : null}
 
           {confirmingCancel && view.cancelWarning ? (
-            <p role="alert" className="rounded-md border border-brand/40 bg-brand/10 px-3 py-2 text-sm">
+            <p role="alert" className="border-l-2 border-brand pl-3 text-sm">
               {view.cancelWarning} Press again to confirm.
             </p>
           ) : null}

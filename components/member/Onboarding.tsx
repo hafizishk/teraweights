@@ -62,7 +62,7 @@ export function Onboarding({ firstName }: { firstName: string }) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <h1 className="text-[32px] leading-[0.95]">{step.title}</h1>
+        <h1 className="text-[36px] leading-[0.92]">{step.title}</h1>
         <p className="text-sm text-muted">{step.help}</p>
       </div>
 
@@ -71,7 +71,7 @@ export function Onboarding({ firstName }: { firstName: string }) {
           <input key={k} type="hidden" name={k} value={v} />
         ))}
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col border-b border-ink-3">
           {step.options.map((o) => {
             const selected = answers[step.key] === o.value;
             return (
@@ -81,15 +81,15 @@ export function Onboarding({ firstName }: { firstName: string }) {
                 name={last ? step.key : undefined}
                 value={last ? o.value : undefined}
                 onClick={() => pick(o.value)}
-                className={`flex min-h-[56px] items-center justify-between rounded-md border px-4 py-3 text-left ${
-                  selected ? "border-brand bg-brand/10" : "border-ink-3 bg-ink-2 hover:border-muted"
+                className={`rule flex min-h-[60px] items-center justify-between py-3 text-left ${
+                  selected ? "border-l-2 border-l-brand pl-3" : "hover:text-paper"
                 }`}
               >
                 <span className="flex flex-col">
-                  <span className="display text-xl leading-none">{o.label}</span>
-                  {o.hint ? <span className="mt-1 text-xs text-muted">{o.hint}</span> : null}
+                  <span className="display text-[24px] leading-none">{o.label}</span>
+                  {o.hint ? <span className="eyebrow mt-1">{o.hint}</span> : null}
                 </span>
-                <span className="text-muted">›</span>
+                <span className="display text-xl text-muted">›</span>
               </button>
             );
           })}

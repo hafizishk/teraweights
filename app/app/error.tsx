@@ -1,18 +1,17 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
-import { Card, CardTitle } from "@/components/ui/Card";
 
 export default function MemberError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
-    <div className="flex flex-col gap-4">
-      <Card className="flex flex-col gap-3 border-brand/40">
-        <CardTitle>Something went wrong</CardTitle>
+    <div className="flex flex-col gap-4 pt-6">
+      <div className="flex flex-col gap-2 border-l-2 border-brand pl-3">
+        <h1 className="text-[34px] leading-none">Something went wrong</h1>
         <p className="text-sm text-muted">Usually a dropped connection. Your bookings are safe.</p>
-        <Button onClick={reset} variant="secondary">
-          Try again
-        </Button>
-      </Card>
+      </div>
+      <Button onClick={reset} variant="secondary">
+        Try again
+      </Button>
     </div>
   );
 }

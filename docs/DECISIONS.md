@@ -96,3 +96,11 @@ The brief put payments out of scope. After reviewing ClassPass, Stackform change
 - **A third staff role rather than a permissions matrix.** Coaches run sessions; event helpers work a registration list and should see nothing else. `event_assistant` gets read and update on `event_registrations` plus the names attached to them, through `is_event_staff()` and `has_event_registration()`. Creating events, waves, results, packages and credits stay admin-only. A full permissions system was considered and rejected: three roles cover the actual people, and RLS policies on an enum are auditable in a way a matrix is not.
 - **Job title is free text.** Permissions follow the role; `staff_title` is what shows next to their name. "Head Coach", "Physio" and "Event Assistant" are display strings, so a new kind of helper is a text field, not a migration.
 - **Invites go through the allowlist.** `admin_allowlist` already stamps a role on first sign-in. `/admin/staff` writes to it, so an invite for someone without an account is one row, and the role is waiting when they arrive. Removing someone from staff also removes the allowlist row, or the role would come straight back.
+
+## Polish pass — ruled, not boxed
+
+- **Sections divide with a hairline, not a card.** The member app had grown a card around every block, and on a black base that reads as a grid of grey boxes. `Card` now defaults to a top rule with the black showing through; `raised` is kept for the few things that are objects on the page, such as the session sheet and an alert.
+- **The numerals are the graphic.** `Scoreboard` is a ruled row of big tabular figures with a quiet label under each. Home's community pulse and My PA.ROX's stats both use it, so the two never drift. Admin stat cards follow the same shape.
+- **Eyebrows are sentence case.** Small labels stop being tracked-out uppercase; the condensed display face is loud enough on its own. Display tracking drops to zero for the same reason.
+- **Book reads as a timetable.** Big time on the left, badge and venue in the middle, spots on the right, with a day rule between groups. The same row shape carries "Booked" and "Full" so the eye lands in the same place every time.
+- **Bottom tabs are text-only.** Five condensed labels, the active one in paper, no icons to draw. The brief asks for no emoji in chrome; this goes one step further.

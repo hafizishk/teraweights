@@ -1,8 +1,10 @@
 import Image from "next/image";
 
 /**
- * Photo under the brand duotone: grayscale image, red multiply, fade to the
- * surface colour at the bottom so text sits on it. Any photo reads on-brand.
+ * A photo with a light brand wash: grayscale, a little red laid over it, and
+ * a fade at the bottom so type can sit on it. Deliberately restrained. The
+ * photo should still look like a photo, and the red is a tint, not a poster
+ * filter. Real photography from the client will do the rest.
  */
 export function DuotonePhoto({
   src,
@@ -21,7 +23,7 @@ export function DuotonePhoto({
 }) {
   const fade =
     fadeTo === "ink"
-      ? "bg-gradient-to-b from-ink/15 via-ink/35 to-ink"
+      ? "bg-gradient-to-b from-ink/10 via-ink/30 to-ink"
       : fadeTo === "card"
         ? "bg-gradient-to-b from-ink-2/10 via-ink-2/40 to-ink-2"
         : "";
@@ -34,9 +36,9 @@ export function DuotonePhoto({
         fill
         sizes={sizes}
         priority={priority}
-        className="object-cover grayscale contrast-125 brightness-[0.72]"
+        className="object-cover grayscale contrast-110 brightness-[0.85]"
       />
-      <div aria-hidden className="absolute inset-0 bg-brand opacity-80 mix-blend-multiply" />
+      <div aria-hidden className="absolute inset-0 bg-brand opacity-45 mix-blend-multiply" />
       {fade ? <div aria-hidden className={`absolute inset-0 ${fade}`} /> : null}
       {children ? <div className="relative flex h-full flex-col justify-end">{children}</div> : null}
     </div>

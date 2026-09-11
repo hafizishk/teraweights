@@ -23,29 +23,33 @@ export default async function EventsPage() {
     upcoming.map((e) => e.id),
   );
 
+  const [next, ...rest] = upcoming;
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl">Events</h1>
+        <h1 className="text-[34px] leading-none">Events</h1>
         <p className="text-sm text-muted">PA.ROX, Kampung Grind and Friends &amp; Family. Bring someone.</p>
       </div>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-xl">Upcoming</h2>
-        {upcoming.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-ink-3 px-4 py-8 text-center text-sm text-muted">
-            Nothing on the calendar yet. Watch this space.
-          </p>
-        ) : (
-          upcoming.map((e) => (
+      {next ? (
+        <EventCard event={next} registration={registrations.get(next.id)} registeredCount={counts.get(next.id)} featured />
+      ) : (
+        <p className="rule py-8 text-sm text-muted">Nothing on the calendar yet. Watch this space.</p>
+      )}
+
+      {rest.length > 0 ? (
+        <section>
+          <h2 className="pb-1 text-xl">Coming up</h2>
+          {rest.map((e) => (
             <EventCard key={e.id} event={e} registration={registrations.get(e.id)} registeredCount={counts.get(e.id)} />
-          ))
-        )}
-      </section>
+          ))}
+        </section>
+      ) : null}
 
       {past.length > 0 ? (
-        <section className="flex flex-col gap-3">
-          <h2 className="text-xl">Past</h2>
+        <section>
+          <h2 className="pb-1 text-xl">Past</h2>
           {past.map((e) => (
             <EventCard key={e.id} event={e} past />
           ))}
