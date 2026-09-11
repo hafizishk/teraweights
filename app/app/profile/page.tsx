@@ -26,9 +26,9 @@ export default async function ProfilePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4">
+      <div className="flex items-start justify-between gap-4">
         <h1 className="text-3xl">You</h1>
-        <AvatarUpload userId={profile.id} name={profile.full_name ?? "Energiser"} src={profile.avatar_url} />
+        <AvatarUpload compact userId={profile.id} name={profile.full_name ?? "Energiser"} src={profile.avatar_url} email={profile.email} />
       </div>
 
       <nav aria-label="Yours" className="flex flex-col">

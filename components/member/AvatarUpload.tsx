@@ -24,7 +24,16 @@ async function shrink(file: File): Promise<Blob> {
   );
 }
 
-export function AvatarUpload({ userId, name, src }: { userId: string; name: string; src: string | null }) {
+type Props = {
+  userId: string;
+  name: string;
+  src: string | null;
+  /** Right-aligned identity block for the top of You: photo, name, email. */
+  compact?: boolean;
+  email?: string | null;
+};
+
+export function AvatarUpload({ userId, name, src, compact = false, email }: Props) {
   const router = useRouter();
   const toast = useToast();
   const input = useRef<HTMLInputElement>(null);
@@ -59,6 +68,39 @@ export function AvatarUpload({ userId, name, src }: { userId: string; name: stri
     setBusy(false);
   }
 
+  const fileInput = (
+    <input ref={input} type="file" accept="image/*" capture="user" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
+  );
+
+  if (compact) {
+    return (
+      <div className="flex shrink-0 flex-col items-end gap-1.5 text-right">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => input.current?.click()}
+          aria-label={src ? "Change photo" : "Add a photo"}
+          className="rounded-full disabled:opacity-50"
+        >
+          <Avatar name={name} src={src} size={64} ring={false} />
+        </button>
+        <span className="display text-xl leading-none">{name}</span>
+        {email ? <span className="max-w-[200px] truncate text-xs text-muted">{email}</span> : null}
+        <span className="flex items-center gap-2 text-xs">
+          <button type="button" disabled={busy} onClick={() => input.current?.click()} className="text-brand disabled:opacity-50">
+            {busy ? "Uploading…" : src ? "Change photo" : "Add a photo"}
+          </button>
+          {src ? (
+            <button type="button" disabled={busy} onClick={onRemove} className="text-muted underline underline-offset-4">
+              Remove
+            </button>
+          ) : null}
+        </span>
+        {fileInput}
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-4">
       <Avatar name={name} src={src} size={72} ring={false} />
@@ -78,14 +120,7 @@ export function AvatarUpload({ userId, name, src }: { userId: string; name: stri
         ) : (
           <span className="text-xs text-muted">Optional. Shows where you appear to other Energisers.</span>
         )}
-        <input
-          ref={input}
-          type="file"
-          accept="image/*"
-          capture="user"
-          className="hidden"
-          onChange={(e) => onFile(e.target.files?.[0])}
-        />
+        {fileInput}
       </div>
     </div>
   );
