@@ -133,3 +133,9 @@ The brief put payments out of scope. After reviewing ClassPass, Stackform change
 - **Two PayNows.** The earlier note dropping PayNow conflated manual PayNow (a QR to the studio's bank account, matched to a member by hand) with PayNow through Stripe, where Checkout shows the QR and the webhook marks the package paid on its own. Only the manual kind creates admin work.
 - **So:** one-off purchases offer PayNow first at 1.3%, cards and wallets alongside at 3.4% plus S$0.50. The trial that rolls into a membership stays cards and wallets, because PayNow cannot be charged again a week later. Renewals charge the saved card or the member buys the next term one-off.
 - **Fees on their prices**, local card versus PayNow: a S$260 pack keeps S$250.66 or S$256.62.
+
+## Tabs — five, with You in the middle
+
+- **Five tabs, You raised.** Home, Book, You, Feed, Events. You is a circle carrying the member's own photo or initials, lifted above the bar the way the MLS app lifts Clubs. The four words stay in the display face; the circle is the one graphic element in the chrome.
+- **PA.ROX moves under You.** The You page opens with three rows: My PA.ROX, Personal training, Coaches. Demo script step 4 is one tap further: You, then My PA.ROX. Those routes light the You tab so the member never feels lost.
+- **Why not six.** Six words at 390px meant shrinking the type, and the brief's tone is bold. Five with a centred anchor reads as a product rather than a menu.

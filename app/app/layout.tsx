@@ -33,9 +33,9 @@ export default async function MemberLayout({ children }: { children: React.React
         </div>
       </header>
       <Toaster>
-        <main className="flex-1 px-4 pb-24 pt-4">{children}</main>
+        <main className="flex-1 px-4 pb-28 pt-4">{children}</main>
       </Toaster>
-      <BottomTabs />
+      <BottomTabs name={profile?.full_name ?? null} avatarUrl={profile?.avatar_url ?? null} />
     </div>
   );
 }

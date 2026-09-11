@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { requireOnboarded } from "@/lib/onboarding";
 import { getMemberPackages } from "@/lib/queries/packages";
@@ -26,9 +27,25 @@ export default async function ProfilePage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4">
-        <h1 className="text-3xl">Profile</h1>
+        <h1 className="text-3xl">You</h1>
         <AvatarUpload userId={profile.id} name={profile.full_name ?? "Energiser"} src={profile.avatar_url} />
       </div>
+
+      <nav aria-label="Yours" className="flex flex-col">
+        {[
+          { href: "/app/parox", title: "My PA.ROX", sub: "Results, personal best, splits" },
+          { href: "/app/pt", title: "Personal training", sub: "Your pack, your coach, your next session" },
+          { href: "/app/coaches", title: "Coaches", sub: "Who runs what, and when" },
+        ].map((r) => (
+          <Link key={r.href} href={r.href} className="rule flex items-center justify-between py-3">
+            <span className="flex flex-col">
+              <span className="display text-[22px] leading-none">{r.title}</span>
+              <span className="text-xs text-muted">{r.sub}</span>
+            </span>
+            <span className="text-muted">›</span>
+          </Link>
+        ))}
+      </nav>
 
       <ProfileForm profile={profile} />
 
