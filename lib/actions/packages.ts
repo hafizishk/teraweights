@@ -61,12 +61,12 @@ export async function savePackage(_prev: ActionResult | null, formData: FormData
   const price = Number(formData.get("price_sgd") ?? 0);
 
   if (!name) return { ok: false, error: "Give the package a name." };
-  if (!["membership", "credits", "dropin"].includes(kind)) return { ok: false, error: "Pick a kind." };
+  if (!["membership", "credits", "dropin", "pt"].includes(kind)) return { ok: false, error: "Pick a kind." };
   if (!Number.isFinite(validityDays) || validityDays < 1) return { ok: false, error: "Validity must be at least a day." };
   if (!Number.isFinite(price) || price < 0) return { ok: false, error: "Price cannot be negative." };
 
   const allowed = list(formData.get("allowed_class_types"));
-  if (allowed.length === 0) return { ok: false, error: "Pick at least one class type." };
+  if (allowed.length === 0 && kind !== "pt") return { ok: false, error: "Pick at least one class type." };
 
   const fields = {
     name,

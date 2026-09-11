@@ -5,7 +5,7 @@
 import { formatDate } from "@/lib/format";
 
 export type CopyPackage = {
-  kind: "membership" | "credits" | "dropin";
+  kind: "membership" | "credits" | "dropin" | "pt";
   tier: "energise" | "pro" | null;
   variant: "weekday" | "weekend" | "west" | null;
   credits_remaining: number | null;
@@ -19,6 +19,12 @@ export function describePackage(p: CopyPackage, weeklyTarget = 2, now: Date = ne
   if (p.is_trial) return `Any East or West session, ${until}`;
 
   if (p.kind === "dropin") return "One session, valid on the day";
+
+  if (p.kind === "pt") {
+    const n = p.credits_remaining ?? 0;
+    if (n === 0) return `No PT sessions left. Expired ${formatDate(p.expires_at)}`;
+    return `${n} one-to-one ${n === 1 ? "session" : "sessions"} with a coach, ${until}`;
+  }
 
   if (p.kind === "credits") {
     const n = p.credits_remaining ?? 0;

@@ -21,12 +21,14 @@ const KINDS: { value: PackageDefinition["kind"]; label: string }[] = [
   { value: "membership", label: "Membership" },
   { value: "credits", label: "Credit pack" },
   { value: "dropin", label: "Drop-in" },
+  { value: "pt", label: "PT pack" },
 ];
 
 const KIND_LABELS: Record<PackageDefinition["kind"], string> = {
   membership: "Membership",
   credits: "Credit pack",
   dropin: "Drop-in",
+  pt: "PT pack",
 };
 
 const NEW = "new";

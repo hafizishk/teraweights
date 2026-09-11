@@ -236,7 +236,7 @@ export type PackageDefinition = {
   id: string;
   name: string;
   description: string | null;
-  kind: "membership" | "credits" | "dropin";
+  kind: "membership" | "credits" | "dropin" | "pt";
   tier: "energise" | "pro" | null;
   variant: "weekday" | "weekend" | "west" | null;
   term_months: number | null;

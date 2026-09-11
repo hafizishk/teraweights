@@ -11,6 +11,7 @@ function kindLabel(p: MemberPackageRow): string {
   if (p.is_trial) return "Trial";
   if (p.kind === "membership") return "Membership";
   if (p.kind === "credits") return "Credits";
+  if (p.kind === "pt") return "Personal training";
   return "Drop-in";
 }
 

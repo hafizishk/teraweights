@@ -7,7 +7,7 @@ import { getMyBookings, getSession, getSessionCounts, getSessionsBetween } from 
 import { attendeeLine, attendeePeople, getAttendees, getCommunityPulse } from "@/lib/queries/community";
 import { checkinState } from "@/lib/rules/checkin";
 import { formatInTimeZone } from "date-fns-tz";
-import { TZ } from "@/lib/format";
+import { TZ, formatTime, formatWeekday } from "@/lib/format";
 import { buildSessionView } from "@/lib/view/session-view";
 import { attendanceStreakWeeks, sessionsThisWeek } from "@/lib/rules/streak";
 import { sgtDate, sgtMidnight, weekOf } from "@/lib/week";
@@ -17,6 +17,7 @@ import { WhoIsTraining, type TrainingRow } from "@/components/member/WhoIsTraini
 import { CoachPost, type Post } from "@/components/member/CoachPost";
 import { AvatarRow } from "@/components/ui/Avatar";
 import { getCoaches } from "@/lib/queries/coaches";
+import { activePtPack, getMyPtSessions } from "@/lib/queries/pt";
 import { MembershipBar } from "@/components/member/MembershipBar";
 import type { Profile, Role } from "@/lib/types";
 
@@ -140,6 +141,9 @@ export default async function HomePage() {
     .maybeSingle<AnnouncementJoin>();
 
   const coaches = await getCoaches(supabase, now);
+  const ptPack = activePtPack(allPackages, now);
+  const ptSessions = ptPack ? await getMyPtSessions(supabase, uid) : [];
+  const nextPt = ptSessions.filter((s) => s.status === "booked" && new Date(s.starts_at).getTime() > now.getTime()).pop() ?? null;
 
   // Assigned coach, if any.
   const { data: coach } = await supabase
@@ -220,13 +224,25 @@ export default async function HomePage() {
         </Link>
       ) : null}
 
-      {coach?.coach?.full_name ? (
-        <div className="rule flex flex-col gap-1 py-3">
-          <span className="eyebrow">My coach</span>
-          <span className="display text-[22px] leading-none">{coach.coach.full_name}</span>
-          <p className="text-sm text-muted">Next PT session: contact your coach.</p>
-        </div>
-      ) : null}
+      {ptPack || coach?.coach?.full_name ? (
+        <Link href="/app/pt" className="rule flex items-center gap-3 py-3">
+          <span className="flex flex-1 flex-col gap-0.5">
+            <span className="eyebrow">Personal training</span>
+            <span className="display text-[22px] leading-none">
+              {nextPt ? `Next PT ${formatWeekday(nextPt.starts_at)} ${formatTime(nextPt.starts_at)}` : ptPack ? `${ptPack.credits_remaining ?? 0} sessions on your pack` : `Coach: ${coach?.coach?.full_name}`}
+            </span>
+            <span className="text-xs text-muted">
+              {nextPt ? `with ${nextPt.coach_name}` : ptPack ? "Book one into your coach's open hours" : "Ask about a PT pack"}
+            </span>
+          </span>
+          <span className="text-muted">›</span>
+        </Link>
+      ) : (
+        <Link href="/app/pt" className="rule flex items-center justify-between py-3 text-sm text-muted">
+          <span>Personal training, one to one</span>
+          <span className="display text-lg text-brand">See PT packs →</span>
+        </Link>
+      )}
 
       <MembershipBar packages={packages} trialEligible={trial.eligible} />
     </div>

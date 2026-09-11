@@ -35,7 +35,7 @@ export async function assignPackage(_prev: ActionResult | null, formData: FormDa
     .eq("id", packageId)
     .maybeSingle<{
       name: string;
-      kind: "membership" | "credits" | "dropin";
+      kind: "membership" | "credits" | "dropin" | "pt";
       validity_days: number;
       credits: number | null;
       fe_credits_included: number;

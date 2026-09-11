@@ -11,7 +11,7 @@ import { formatInTimeZone } from "date-fns-tz";
 import { TZ } from "@/lib/format";
 import type { ClassSlug } from "@/lib/types";
 
-export type PackageKind = "membership" | "credits" | "dropin";
+export type PackageKind = "membership" | "credits" | "dropin" | "pt";
 export type PackageTier = "energise" | "pro" | null;
 export type PackageVariant = "weekday" | "weekend" | "west" | null;
 

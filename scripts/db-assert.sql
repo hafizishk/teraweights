@@ -23,7 +23,7 @@ begin
 
   perform pg_temp.assert((select count(*) from public.class_types) = 4, '4 class types');
   perform pg_temp.assert((select count(*) from public.venues) = 6, '6 venues');
-  perform pg_temp.assert((select count(*) from public.packages) = 19, '18 packages + trial');
+  perform pg_temp.assert((select count(*) from public.packages) = 21, '18 packages + trial + 2 PT packs');
   perform pg_temp.assert((select price_sgd from public.packages where name = 'Energise Weekday 4-month') = 260, 'Weekday 4-month = 260');
   perform pg_temp.assert((select validity_days from public.packages where name = 'Energise PRO 12-month') = 420, 'PRO 12-month validity 420');
 
@@ -51,6 +51,9 @@ begin
   perform pg_temp.assert(exists (select 1 from public.bookings b join public.sessions s on s.id = b.session_id where b.member_id = aisyah and b.status = 'booked' and s.starts_at = pg_temp.sgt('2026-09-10','20:00') and b.entitlement = 'membership'), 'Aisyah booked Thu 10 Sep');
   perform pg_temp.assert(not exists (select 1 from public.event_registrations where member_id = aisyah and event_id = 'e0000000-0000-4000-8000-000000000001'), 'Aisyah not yet registered for PA.ROX Sep');
   perform pg_temp.assert(not exists (select 1 from public.coach_assignments where member_id = aisyah), 'Aisyah has no coach');
+  perform pg_temp.assert((select credits_remaining from public.member_packages where id = 'd0000000-0000-4000-8000-000000000005') = 5, 'Marcus has 5 PT sessions left');
+  perform pg_temp.assert((select count(*) from public.pt_sessions where member_id = 'a0000000-0000-4000-8000-000000000006' and status = 'attended') = 3, 'Marcus attended 3 PT');
+  perform pg_temp.assert((select count(*) from public.pt_availability) = 4, 'Faizal has 4 PT windows');
   select string_agg(total_seconds::text, ',' order by e.event_date) into t
     from public.event_results r join public.events e on e.id = r.event_id where r.member_id = aisyah;
   perform pg_temp.assert(t = '2892,2677,2465', 'Aisyah results 48:12, 44:37, 41:05 — got ' || t);
@@ -137,7 +140,7 @@ begin
   set local role anon;
   perform pg_temp.assert((select count(*) from public.events) = 6, 'RLS: anon sees public events');
   perform pg_temp.assert((select count(*) from public.sessions) > 0, 'RLS: anon reads sessions');
-  perform pg_temp.assert((select count(*) from public.packages) = 19, 'RLS: anon reads packages');
+  perform pg_temp.assert((select count(*) from public.packages) = 21, 'RLS: anon reads packages');
   perform pg_temp.assert((select count(*) from public.event_registrations) = 0, 'RLS: anon sees no registrations');
   reset role;
 end $$;
@@ -496,4 +499,73 @@ begin
 
   update public.profiles set role = 'member', staff_title = null where id = helper;
   raise notice 'staff assertions OK';
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- 0010 — personal training: booking and cancelling inside open hours.
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  marcus uuid := 'a0000000-0000-4000-8000-000000000006';
+  aisyah uuid := 'a0000000-0000-4000-8000-000000000001';
+  faizal uuid := 'a0000000-0000-4000-8000-000000000003';
+  pack uuid := 'd0000000-0000-4000-8000-000000000005';
+  sid uuid;
+  left_ int;
+  refunded int;
+  late boolean;
+begin
+  perform pg_temp.as_user(marcus);
+  set local role authenticated;
+
+  -- Marcus sees his own PT and nobody else's; taken slots hide names.
+  perform pg_temp.assert((select count(*) from public.pt_sessions) = 4, 'Marcus sees his 4 PT sessions');
+  perform pg_temp.assert((select count(*) from public.pt_taken_slots(faizal, pg_temp.sgt('2026-09-14','00:00'), pg_temp.sgt('2026-09-21','00:00'))) > 0, 'taken slots visible');
+
+  -- Books Thu 17 Sep 8am (inside Thu 6–9) and pays one credit.
+  select b.session_id, b.credits_left into sid, left_ from public.book_pt_session(faizal, pg_temp.sgt('2026-09-17','08:00'), 60) b;
+  perform pg_temp.assert(left_ = 4, 'one PT credit spent, got ' || left_);
+
+  -- Cannot book outside open hours, nor a clashing slot, nor the past.
+  begin
+    perform public.book_pt_session(faizal, pg_temp.sgt('2026-09-16','08:00'), 60);
+    raise exception 'booked outside open hours';
+  exception when sqlstate 'P0001' then null;
+  end;
+  begin
+    perform public.book_pt_session(faizal, pg_temp.sgt('2026-09-17','08:00'), 60);
+    raise exception 'double-booked a slot';
+  exception when sqlstate 'P0001' then null;
+  end;
+  begin
+    perform public.book_pt_session(faizal, pg_temp.sgt('2026-09-01','07:00'), 60);
+    raise exception 'booked in the past';
+  exception when sqlstate 'P0001' then null;
+  end;
+
+  -- Cancelling early returns the credit.
+  select c.refunded, c.late into refunded, late from public.cancel_pt_session(sid) c;
+  perform pg_temp.assert(refunded = 1 and not late, 'early cancel refunds');
+  perform pg_temp.assert((select credits_remaining from public.member_packages where id = pack) = 5, 'balance back to 5');
+  reset role;
+
+  -- Aisyah has no PT pack and is refused.
+  perform pg_temp.as_user(aisyah);
+  set local role authenticated;
+  begin
+    perform public.book_pt_session(faizal, pg_temp.sgt('2026-09-17','08:00'), 60);
+    raise exception 'booked PT without a pack';
+  exception when sqlstate 'P0001' then null;
+  end;
+  perform pg_temp.assert((select count(*) from public.pt_sessions) = 0, 'Aisyah sees no PT sessions');
+  reset role;
+
+  -- The coach sees Marcus's sessions and his name.
+  perform pg_temp.as_user(faizal);
+  set local role authenticated;
+  perform pg_temp.assert((select count(*) from public.pt_sessions where member_id = marcus) = 5, 'coach sees PT sessions incl. the cancelled one');
+  perform pg_temp.assert((select count(*) from public.profiles where id = marcus) = 1, 'coach reads PT client name');
+  reset role;
+
+  raise notice 'PT assertions OK';
 end $$;

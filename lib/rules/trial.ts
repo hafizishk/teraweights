@@ -7,7 +7,7 @@
  */
 
 export type TrialCheckPackage = {
-  kind: "membership" | "credits" | "dropin";
+  kind: "membership" | "credits" | "dropin" | "pt";
   payment_status: "pending" | "paid";
   expires_at: string;
   is_trial: boolean;

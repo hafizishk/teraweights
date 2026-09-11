@@ -20,6 +20,8 @@ set local search_path = pg_temp, public, extensions;
 -- Reset
 -- ---------------------------------------------------------------------------
 truncate table
+  public.pt_sessions,
+  public.pt_availability,
   public.coach_assignments,
   public.announcements,
   public.event_results,
@@ -279,6 +281,13 @@ values
 insert into public.packages (name, kind, tier, variant, term_months, validity_days, credits, price_sgd, price_per_month, allowed_class_types, fe_credits_included, cashback_eligible, perks, is_trial)
 values ('Trial Week', 'membership', 'energise', null, null, 7, null, 0, null, array['energise_east', 'energise_west'], 0, false, array['Any Energise East or West session for 7 days', 'One per Energiser'], true);
 
+-- Personal training packs (scope change: PT direction A). One credit = one
+-- 60-minute session with a coach, booked inside their open hours.
+insert into public.packages (name, kind, tier, variant, term_months, validity_days, credits, price_sgd, price_per_month, allowed_class_types, fe_credits_included, cashback_eligible, perks)
+values
+  ('PT 4-pack', 'pt', null, null, null, 60, 4, 340, null, '{}', 0, false, array['4 one-to-one sessions', 'Valid 60 days']),
+  ('PT 8-pack', 'pt', null, null, null, 90, 8, 640, null, '{}', 0, false, array['8 one-to-one sessions', 'Valid 90 days', 'Best value']);
+
 update public.packages set description = case
   when is_trial then 'Seven days of Energise East and West, on us.'
   when kind = 'membership' then 'Unlimited sessions for the term.'
@@ -306,6 +315,41 @@ values ('d0000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-0000000
         (select id from public.packages where name = 'Energise PRO 1-month'), 'membership',
         pg_temp.sgt('2026-08-31', '00:00'), pg_temp.sgt('2026-09-30', '23:59:59'), 'paid', 'PAYNOW-2608-MT',
         'a0000000-0000-4000-8000-000000000099', pg_temp.sgt('2026-08-31', '09:00'));
+
+-- Marcus: PT 8-pack, 5 left, with Faizal (PT demo lives on Marcus so Aisyah
+-- stays exactly as the brief describes her).
+insert into public.member_packages (id, member_id, package_id, kind, starts_at, expires_at, credits_total, credits_remaining, payment_status, payment_ref, recorded_by, purchased_at)
+values ('d0000000-0000-4000-8000-000000000005', 'a0000000-0000-4000-8000-000000000006',
+        (select id from public.packages where name = 'PT 8-pack'), 'pt',
+        pg_temp.sgt('2026-08-25', '00:00'), pg_temp.sgt('2026-11-23', '23:59:59'), 8, 5, 'paid', 'PAYNOW-2608-MT-PT',
+        'a0000000-0000-4000-8000-000000000099', pg_temp.sgt('2026-08-25', '09:00'));
+
+insert into public.coach_assignments (member_id, coach_id, notes)
+values ('a0000000-0000-4000-8000-000000000006', 'a0000000-0000-4000-8000-000000000003',
+        'Hip hinge and sled strength for Kampung Grind. Two PT a week around your Wednesday PRIME, deload the week before the race.');
+
+-- Faizal's open hours for PT: Tue and Thu mornings, Tue evening before East, Sat late morning.
+insert into public.pt_availability (coach_id, weekday, start_time, end_time, venue_id, slot_minutes)
+select 'a0000000-0000-4000-8000-000000000003', d.weekday, d.start_time, d.end_time,
+       (select id from public.venues where name like 'Bedok Reservoir%' limit 1), 60
+  from (values
+    (2, time '06:00', time '09:00'),
+    (2, time '18:30', time '19:30'),
+    (4, time '06:00', time '09:00'),
+    (6, time '09:00', time '11:00')
+  ) as d(weekday, start_time, end_time);
+
+-- Marcus's PT so far, and the next one.
+insert into public.pt_sessions (coach_id, member_id, member_package_id, venue_id, starts_at, ends_at, status, title, coach_note)
+select 'a0000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000006', 'd0000000-0000-4000-8000-000000000005',
+       (select id from public.venues where name like 'Bedok Reservoir%' limit 1),
+       pg_temp.sgt(d.day, d.t), pg_temp.sgt(d.day, d.t) + interval '60 minutes', d.status, d.title, d.note
+  from (values
+    (date '2026-08-27', time '07:00', 'attended', 'Intro session',   'Goals set: sub-40 Kampung Grind. Baseline 1km 5:40.'),
+    (date '2026-09-01', time '07:00', 'attended', 'Assessment',      'Wall balls 12/min, sled push 20 m at 60 kg felt heavy. Hinge pattern is the gap.'),
+    (date '2026-09-03', time '07:00', 'attended', 'Sled + trap bar', 'Trap bar 3×5 at 70 kg, up from 65. Keep the sled short and heavy.'),
+    (date '2026-09-15', time '07:00', 'booked',   null,              null)
+  ) as d(day, t, status, title, note);
 
 -- Priya: expired Energise 1-month (ended 31 Aug)
 insert into public.member_packages (id, member_id, package_id, kind, starts_at, expires_at, payment_status, payment_ref, recorded_by, purchased_at)

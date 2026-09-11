@@ -114,3 +114,16 @@ The brief put payments out of scope. After reviewing ClassPass, Stackform change
 - **Six tabs.** "Feed" earns a tab: it is the Telegram replacement, which is the pitch. Labels shrink one size to fit.
 - **Coaches are derived, not declared.** A coach is anyone with a staff role who has a session in the next four weeks or a bio. Their classes and next session come from the schedule, so the page is never stale. Bio and title are edited on the Staff screen.
 - **A coach's sessions deep-link into Book** with the sheet already open, rather than duplicating the booking sheet on a second screen.
+
+## Session 7 — Personal training, direction A
+
+- **Why A.** Three directions were mocked up: PT you book from a pack, programme-led coaching, and request-and-confirm. The client's brief for everything since the trial has been "less admin", and only A has no human in the loop: buy a pack, book a slot, done. B (programmes and logging) can sit on top of A later without changing the data model; C would have put a coach in front of every booking.
+- **Packs only.** A PT pack is a package of kind `pt` with N credits, so assignment, payment recording, credit adjustment, expiry and the profile list all work unchanged. Per-session purchase was offered and declined.
+- **A PT pack can never pay for a class.** `lib/rules/entitlement.ts` only considers membership, credits and dropin; `book_pt_session` only considers `pt`. Both sides are explicit rather than relying on a default branch.
+- **Slots are derived, not stored.** A coach declares open hours (weekday, from, to, slot length, venue). `lib/rules/pt.ts` turns them into bookable instants minus anything already taken, and `pt_taken_slots()` returns those windows without saying who took them. Class sessions the coach runs are taken windows too, so PT can never overlap a class. The database re-checks every rule on booking.
+- **Twelve hours' notice, two weeks ahead.** A coach should not find a 6am PT in their diary at 11pm. Both numbers live in the rule.
+- **Same cancellation cutoff as classes.** Outside six hours the session returns to the pack; inside, the coach's hour is already lost. An admin cancelling on a member's behalf always returns it, through the audited credit adjustment.
+- **The note is the product.** Each session carries a title and a coach note the member reads on their PT page. Compliance rings and programmes are not built; a coach who writes two lines after each session gives the member most of that.
+- **PT demo lives on Marcus, not Aisyah.** The brief describes Aisyah exactly and the demo script toggles her coach on live. Marcus holds a PT 8-pack with five left, three past sessions with notes and one booked, so the screen is full without touching her.
+- **Faizal's open hours in the seed** are Tue and Thu 6 to 9am, Tue 6:30pm before East, and Sat 9 to 11am.
+- **Buying a pack in the app waits for payments.** Until Stripe lands, the PT page lists the packs and says to ask at a session; admin assigns them from the member page like any other package.

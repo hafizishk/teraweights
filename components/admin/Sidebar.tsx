@@ -9,6 +9,7 @@ import { ROLE_LABELS, type Role } from "@/lib/types";
 const adminNav = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/schedule", label: "Schedule" },
+  { href: "/admin/pt", label: "Personal training" },
   { href: "/admin/members", label: "Members" },
   { href: "/admin/packages", label: "Packages" },
   { href: "/admin/events", label: "Events" },
@@ -19,6 +20,7 @@ const adminNav = [
 const coachNav = [
   { href: "/admin", label: "Today" },
   { href: "/admin/schedule", label: "Schedule" },
+  { href: "/admin/pt", label: "Personal training" },
 ];
 
 const eventAssistantNav = [{ href: "/admin/events", label: "Events" }];
