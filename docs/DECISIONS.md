@@ -145,3 +145,9 @@ The brief put payments out of scope. After reviewing ClassPass, Stackform change
 - **Avatar top right.** The member's photo or initials sits next to the credits word in the header on every screen, the way the MLS app puts the person icon beside the menu. Tapping it opens `/app/account`: photo, name, phone, email, zone, weekly target, usual time, roster sharing, install, log out. Who you are, opened rarely.
 - **You is what you train on.** The tab opens with Packages (what you're on, credits left, expiry), then My PA.ROX, Personal training, Coaches. No form fields there any more; one quiet row points to Account. The header word and the Home membership bar still link to You, since that is where packages live.
 - **Why split.** One page carrying settings, packages and three destinations felt like a menu. A photo in the header is the settings entry every app trains people on; the tab is free to be the member's own dashboard.
+
+## Home and You are one screen; PA.ROX gets the fifth tab
+
+- **One landing screen.** Home showed the membership bar, a PT card and a coaches strip; You repeated them as packages, a PT row and a Coaches row. Now `/app` is You: hero, pulse, who's training, latest post, coaches, PT, then the full packages list (the no-package and free-week block stays at the bottom when there is nothing active). `/app/profile` redirects there so old links survive.
+- **Tabs: Book, Feed, You, Events, PA.ROX.** Merging freed a slot and PA.ROX earns it: the community's signature event and the demo's showpiece, no longer two taps deep. Demo script step 4 is the PA.ROX tab again.
+- **Account stays in the header.** Photo, name and settings behind the avatar top right; the tab is the member's own dashboard.

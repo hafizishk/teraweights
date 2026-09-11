@@ -8,7 +8,7 @@ function daysLeft(expiresAt: string, now = new Date()): number {
   return Math.floor((new Date(expiresAt).getTime() - now.getTime()) / 86_400_000);
 }
 
-/** One ruled line for the member's packages; the full breakdown lives in Profile. */
+/** One ruled line for the member's packages; the full breakdown is further down the You screen. */
 export function MembershipBar({
   packages,
   trialEligible = false,
@@ -36,13 +36,10 @@ export function MembershipBar({
       );
     }
     return (
-      <Link href="/app/profile" className="rule flex items-center justify-between py-3">
-        <span className="flex flex-col gap-0.5">
-          <span className="display text-lg leading-none text-brand">No active package</span>
-          <span className="eyebrow">Contact us to get set up</span>
-        </span>
-        <span className="display text-base text-muted">Details →</span>
-      </Link>
+      <div className="rule flex flex-col gap-0.5 py-3">
+        <span className="display text-lg leading-none text-brand">No active package</span>
+        <span className="eyebrow">Contact us to get set up</span>
+      </div>
     );
   }
 
@@ -62,7 +59,7 @@ export function MembershipBar({
     : "Credits";
 
   return (
-    <Link href="/app/profile" className="rule flex items-center justify-between py-3">
+    <Link href="#packages" className="rule flex items-center justify-between py-3">
       <span className="flex flex-col gap-0.5">
         <span className="display text-lg leading-none">{title}</span>
         <span className="eyebrow">{parts.join(" · ")}</span>

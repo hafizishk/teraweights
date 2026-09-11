@@ -24,7 +24,7 @@ export function HeaderPill({ packages }: { packages: MemberPackageRow[] }) {
   const empty = label === "No package";
   return (
     <Link
-      href="/app/profile"
+      href="/app#packages"
       className={`display tnum text-base leading-none tracking-wide ${empty ? "text-brand" : "text-paper"}`}
     >
       {label}

@@ -5,20 +5,20 @@ import { usePathname } from "next/navigation";
 import { Avatar } from "@/components/ui/Avatar";
 
 const left = [
-  { href: "/app", label: "Home" },
   { href: "/app/book", label: "Book" },
+  { href: "/app/community", label: "Feed" },
 ] as const;
 
 const right = [
-  { href: "/app/community", label: "Feed" },
   { href: "/app/events", label: "Events" },
+  { href: "/app/parox", label: "PA.ROX" },
 ] as const;
 
-/** You also owns My PA.ROX and Coaches, so those routes light it up. */
-const YOU_ROUTES = ["/app/profile", "/app/account", "/app/parox", "/app/coaches", "/app/pt"];
+/** You is the landing screen; Account, Coaches and PT hang off it, so they light it up too. */
+const YOU_ROUTES = ["/app/account", "/app/coaches", "/app/pt", "/app/profile"];
 
 function isActive(href: string, pathname: string): boolean {
-  return href === "/app" ? pathname === "/app" : pathname.startsWith(href);
+  return pathname.startsWith(href);
 }
 
 /**
@@ -28,7 +28,7 @@ function isActive(href: string, pathname: string): boolean {
  */
 export function BottomTabs({ name, avatarUrl }: { name: string | null; avatarUrl: string | null }) {
   const pathname = usePathname();
-  const youActive = YOU_ROUTES.some((r) => pathname.startsWith(r));
+  const youActive = pathname === "/app" || YOU_ROUTES.some((r) => pathname.startsWith(r));
 
   const tab = ({ href, label }: { href: string; label: string }) => {
     const active = isActive(href, pathname);
@@ -56,7 +56,7 @@ export function BottomTabs({ name, avatarUrl }: { name: string | null; avatarUrl
         {left.map(tab)}
         <li className="relative flex justify-center">
           <Link
-            href="/app/profile"
+            href="/app"
             aria-current={youActive ? "page" : undefined}
             aria-label="You"
             className="-mt-7 flex flex-col items-center gap-1"

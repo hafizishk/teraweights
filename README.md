@@ -64,5 +64,5 @@ Demo accounts use plus-aliases of one real inbox, so every sign-in code lands in
 ## Routes
 
 - `/login` — email OTP
-- `/app/*` — member app (mobile-first, bottom tabs)
+- `/app/*` — member app (mobile-first; tabs Book, Feed, You, Events, PA.ROX; `/app` is You, `/app/account` is settings)
 - `/admin/*` — admin portal (coach or admin, sidebar)

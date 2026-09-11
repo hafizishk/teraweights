@@ -202,7 +202,7 @@ export default async function PtPage() {
           <span className="display text-[20px] leading-none">{pack.package_name}</span>
           <span className="eyebrow">Expires {formatDayTime(pack.expires_at).split(" · ")[0]} · renews with one tap once payments are in</span>
         </div>
-        <Link href="/app/profile" className="display text-lg text-brand">
+        <Link href="/app#packages" className="display text-lg text-brand">
           Packs →
         </Link>
       </section>

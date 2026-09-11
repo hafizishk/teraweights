@@ -19,9 +19,10 @@ import { AvatarRow } from "@/components/ui/Avatar";
 import { getCoaches } from "@/lib/queries/coaches";
 import { activePtPack, getMyPtSessions } from "@/lib/queries/pt";
 import { MembershipBar } from "@/components/member/MembershipBar";
+import { PackagesList } from "@/components/member/PackagesList";
 import type { Profile, Role } from "@/lib/types";
 
-export const metadata = { title: "Home" };
+export const metadata = { title: "You" };
 
 type BookingJoin = {
   id: string;
@@ -41,7 +42,12 @@ type AnnouncementJoin = {
   author: { full_name: string | null; role: Role } | null;
 };
 
-export default async function HomePage() {
+/**
+ * The You tab, which is also the landing screen: your next session and
+ * streak, the community pulse, the latest post, then the places and packages
+ * that are yours. Name, photo and settings live under Account in the header.
+ */
+export default async function YouPage() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -244,7 +250,13 @@ export default async function HomePage() {
         </Link>
       )}
 
-      <MembershipBar packages={packages} trialEligible={trial.eligible} />
+      {packages.length === 0 ? <MembershipBar packages={packages} trialEligible={trial.eligible} /> : null}
+
+      {allPackages.length > 0 ? (
+        <div id="packages">
+          <PackagesList packages={allPackages} weeklyTarget={profile?.weekly_target ?? 3} />
+        </div>
+      ) : null}
     </div>
   );
 }
