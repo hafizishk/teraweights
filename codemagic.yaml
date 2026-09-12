@@ -58,13 +58,28 @@ workflows:
           app-store-connect create-bundle-id "$BUNDLE_ID" \
             --name "Teraweights" --platform IOS --yes || true
 
+      # --project is pinned: the default pattern is **/*.xcodeproj, and
+      # Capacitor 8's Swift Package checkouts contain their own Xcode
+      # projects, so an unpinned run can apply the profile to the wrong one
+      # and leave the App target unsigned.
       - name: Fetch or create signing files
         script: |
           keychain initialize
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE --create
           keychain add-certificates
-          xcode-project use-profiles
+          xcode-project use-profiles \
+            --project "ios/App/App.xcodeproj" \
+            --code-signing-setup-verbose-logging
+
+      - name: Show what got signed
+        script: |
+          echo "--- profiles on disk ---"
+          ls -la ~/Library/MobileDevice/Provisioning\ Profiles/ || true
+          echo "--- signing build settings ---"
+          xcodebuild -project ios/App/App.xcodeproj -target App \
+            -configuration Release -showBuildSettings 2>/dev/null \
+            | grep -E "PRODUCT_BUNDLE_IDENTIFIER|DEVELOPMENT_TEAM|PROVISIONING_PROFILE|CODE_SIGN_STYLE|CODE_SIGN_IDENTITY" || true
 
       # Capacitor 8 uses Swift Package Manager, so it generates only
       # App.xcodeproj and no .xcworkspace. Older Capacitor and any project
