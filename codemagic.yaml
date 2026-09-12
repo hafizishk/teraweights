@@ -64,18 +64,31 @@ workflows:
       # and leave the App target unsigned.
       - name: Fetch or create signing files
         script: |
+          set -e
+          SIGN_DIR="$CM_BUILD_DIR/signing"
+          mkdir -p "$SIGN_DIR/profiles"
           keychain initialize
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
-            --type IOS_APP_STORE --create
+            --type IOS_APP_STORE --create \
+            --profiles-dir "$SIGN_DIR/profiles"
           keychain add-certificates
-          xcode-project use-profiles \
-            --project "ios/App/App.xcodeproj" \
-            --code-signing-setup-verbose-logging
+          echo "--- profiles fetched ---"
+          ls -la "$SIGN_DIR/profiles"
+          ls "$SIGN_DIR/profiles"/*.mobileprovision >/dev/null 2>&1 \
+            || { echo "fetch-signing-files produced no profile"; exit 1; }
+          # Xcode 16 and later read ~/Library/Developer/Xcode/UserData/Provisioning Profiles;
+          # older Xcode reads ~/Library/MobileDevice/Provisioning Profiles. Install in both.
+          for d in "$HOME/Library/MobileDevice/Provisioning Profiles" \
+                   "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"; do
+            mkdir -p "$d"
+            cp "$SIGN_DIR/profiles"/*.mobileprovision "$d"/
+          done
 
       - name: Show what got signed
         script: |
           echo "--- profiles on disk ---"
-          ls -la ~/Library/MobileDevice/Provisioning\ Profiles/ || true
+          ls -la "$HOME/Library/MobileDevice/Provisioning Profiles" || true
+          ls -la "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" || true
           echo "--- signing build settings ---"
           xcodebuild -project ios/App/App.xcodeproj -target App \
             -configuration Release -showBuildSettings 2>/dev/null \
@@ -88,8 +101,8 @@ workflows:
       - name: Build the ipa
         script: |
           set -e
-          PROFILE=$(ls -t ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision | head -1)
-          [ -n "$PROFILE" ] || { echo "No provisioning profile on disk"; exit 1; }
+          PROFILE=$(ls -t "$CM_BUILD_DIR/signing/profiles"/*.mobileprovision 2>/dev/null | head -1)
+          [ -n "$PROFILE" ] || { echo "No provisioning profile in $CM_BUILD_DIR/signing/profiles"; exit 1; }
           security cms -D -i "$PROFILE" > /tmp/profile.plist
           PROFILE_NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' /tmp/profile.plist)
           PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' /tmp/profile.plist)
