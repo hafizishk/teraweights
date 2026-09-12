@@ -81,20 +81,44 @@ workflows:
             -configuration Release -showBuildSettings 2>/dev/null \
             | grep -E "PRODUCT_BUNDLE_IDENTIFIER|DEVELOPMENT_TEAM|PROVISIONING_PROFILE|CODE_SIGN_STYLE|CODE_SIGN_IDENTITY" || true
 
-      # Capacitor 8 uses Swift Package Manager, so it generates only
-      # App.xcodeproj and no .xcworkspace. Older Capacitor and any project
-      # that pulls in CocoaPods does produce a workspace, so handle both.
+      # Signing is passed to xcodebuild explicitly, read off the downloaded
+      # profile, rather than trusting use-profiles to have patched the
+      # project. Capacitor 8 generates only App.xcodeproj (Swift Package
+      # Manager, no CocoaPods, no workspace), so the project is built directly.
       - name: Build the ipa
         script: |
-          if [ -d "ios/App/App.xcworkspace" ]; then
-            xcode-project build-ipa \
-              --workspace "ios/App/App.xcworkspace" \
-              --scheme "$XCODE_SCHEME"
-          else
-            xcode-project build-ipa \
-              --project "ios/App/App.xcodeproj" \
-              --scheme "$XCODE_SCHEME"
-          fi
+          set -e
+          PROFILE=$(ls -t ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision | head -1)
+          [ -n "$PROFILE" ] || { echo "No provisioning profile on disk"; exit 1; }
+          security cms -D -i "$PROFILE" > /tmp/profile.plist
+          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' /tmp/profile.plist)
+          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' /tmp/profile.plist)
+          TEAM_ID=$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' /tmp/profile.plist)
+          echo "profile: $PROFILE_NAME ($PROFILE_UUID) team: $TEAM_ID"
+
+          cat > /tmp/export_options.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>export</string>
+            <key>teamID</key><string>$TEAM_ID</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>signingCertificate</key><string>Apple Distribution</string>
+            <key>provisioningProfiles</key>
+            <dict><key>$BUNDLE_ID</key><string>$PROFILE_NAME</string></dict>
+            <key>uploadSymbols</key><true/>
+          </dict>
+          </plist>
+          EOF
+
+          xcode-project build-ipa \
+            --project "ios/App/App.xcodeproj" \
+            --scheme "$XCODE_SCHEME" \
+            --config Release \
+            --archive-xcargs "CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=$TEAM_ID PROVISIONING_PROFILE_SPECIFIER=$PROFILE_UUID CODE_SIGN_IDENTITY=\"Apple Distribution\" PRODUCT_BUNDLE_IDENTIFIER=$BUNDLE_ID" \
+            --export-options-plist /tmp/export_options.plist
 
     artifacts:
       - build/ios/ipa/*.ipa
