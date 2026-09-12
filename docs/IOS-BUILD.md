@@ -47,6 +47,12 @@ Certificates without certificate private key": your team already has
 distribution certificates from other apps, but Codemagic does not hold their
 private keys, so it can use none of them.
 
+The provisioning profile is not something you create. The build makes it
+through the App Store Connect API on every run (named "Teraweights App
+Store", replaced each time so it always carries the current certificates)
+and installs it for Xcode. Codemagic's own automatic mode only matches
+profiles it already holds, so it is not used.
+
 
 1. https://codemagic.io. Scroll to **For individuals** at the bottom of the pricing page and click **Get started** there. It is free: 500 macOS minutes a month, unlimited apps, one build at a time. A build here is 10 to 15 minutes, so that is 30-odd builds a month. Sign up with GitHub and allow access to `teraweights`.
 2. **Personal Account** (or **Teams** on a paid plan), **Integrations**, **App Store Connect**, **Connect**.
