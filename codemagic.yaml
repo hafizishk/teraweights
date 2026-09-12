@@ -8,13 +8,14 @@
 #   - The Apple team already has distribution certificates from other apps.
 #     Codemagic can list them but holds none of their private keys, so it can
 #     sign with none of them and will not create another on its own.
-#   - So a certificate is generated inside Codemagic (Code signing identities
-#     > iOS certificates > Generate), reference name teraweights_dist. Codemagic
-#     keeps its private key and imports it into the keychain before scripts run.
 #   - Codemagic's automatic ios_signing only matches profiles it already
-#     holds; it does not create one. So the App Store profile is created
-#     below through the App Store Connect API, which needs no private key,
-#     and is written to disk for xcodebuild.
+#     holds; it does not create one. And its schema will not accept a
+#     certificate reference without a profile reference. So neither is used.
+#   - Instead: a private key you generate once lives in the secure variable
+#     CERTIFICATE_PRIVATE_KEY (group "signing"). fetch-signing-files --create
+#     makes a distribution certificate bound to that key and the App Store
+#     profile, both through the App Store Connect API. Same key every build,
+#     so the certificate is created once and reused afterwards.
 
 workflows:
   ios-testflight:
@@ -31,13 +32,14 @@ workflows:
       node: 22
       xcode: latest
       cocoapods: default
-      ios_signing:
-        certificates:
-          - teraweights_dist
+      groups:
+        # Holds CERTIFICATE_PRIVATE_KEY, a secure variable: an RSA private key
+        # in PEM form, generated once with `openssl genrsa 2048`. The CLI
+        # reads it from the environment automatically.
+        - signing
       vars:
         BUNDLE_ID: "sg.teraweights.app"
         XCODE_SCHEME: "App"
-        PROFILE_NAME: "Teraweights App Store"
         # The deployed site the native shell loads. Change here if the
         # production URL changes; capacitor.config.ts reads APP_URL.
         APP_URL: "https://teraweights.vercel.app"
@@ -65,55 +67,22 @@ workflows:
           agvtool new-marketing-version "$(node -p "require('../../package.json').version")" || true
           agvtool new-version -all "$PROJECT_BUILD_NUMBER"
 
-      - name: Create the App Store provisioning profile
+      - name: Create certificate and profile
         script: |
           set -e
+          [ -n "$CERTIFICATE_PRIVATE_KEY" ] || { echo "CERTIFICATE_PRIVATE_KEY is not set. Add it as a secure variable in group 'signing'."; exit 1; }
           SIGN_DIR="$CM_BUILD_DIR/signing"
           mkdir -p "$SIGN_DIR"
-
-          echo "--- bundle id ---"
-          app-store-connect list-bundle-ids --bundle-id-identifier "$BUNDLE_ID" --platform IOS --json > /tmp/bids.json 2>/dev/null || echo "[]" > /tmp/bids.json
-          BID=$(python3 -c 'import json; d=json.load(open("/tmp/bids.json")); print(d[0]["id"] if d else "")')
-          if [ -z "$BID" ]; then
-            app-store-connect create-bundle-id "$BUNDLE_ID" --name "Teraweights" --platform IOS --json > /tmp/bid.json
-            BID=$(python3 -c 'import json; print(json.load(open("/tmp/bid.json"))["id"])')
-          fi
-          echo "bundle id resource: $BID"
-
-          echo "--- distribution certificates on the team ---"
-          app-store-connect list-certificates --type DISTRIBUTION --json > /tmp/c1.json 2>/dev/null || echo "[]" > /tmp/c1.json
-          app-store-connect list-certificates --type IOS_DISTRIBUTION --json > /tmp/c2.json 2>/dev/null || echo "[]" > /tmp/c2.json
-          CERT_IDS=$(python3 -c '
-          import json, sys, datetime
-          now = datetime.datetime.utcnow().isoformat()
-          ids = []
-          for f in ("/tmp/c1.json", "/tmp/c2.json"):
-              try: data = json.load(open(f))
-              except Exception: data = []
-              for c in data:
-                  a = c.get("attributes", {})
-                  if a.get("expirationDate", "9999") > now:
-                      ids.append(c["id"])
-                      print("  ", c["id"], a.get("displayName"), a.get("certificateType"), str(a.get("expirationDate"))[:10], file=sys.stderr)
-          print(" ".join(ids))
-          ')
-          [ -n "$CERT_IDS" ] || { echo "No valid distribution certificate on the team. Generate one in Codemagic, Code signing identities."; exit 1; }
-
-          echo "--- profile ---"
-          app-store-connect list-profiles --type IOS_APP_STORE --json > /tmp/profiles.json 2>/dev/null || echo "[]" > /tmp/profiles.json
-          for id in $(python3 -c 'import json,os; print(" ".join(p["id"] for p in json.load(open("/tmp/profiles.json")) if p["attributes"]["name"]==os.environ["PROFILE_NAME"]))'); do
-            echo "replacing old profile $id"
-            app-store-connect delete-profile "$id" || true
-          done
-          app-store-connect create-profile \
-            --bundle-id-resource-id "$BID" \
-            --certificate-resource-ids $CERT_IDS \
+          keychain initialize
+          app-store-connect create-bundle-id "$BUNDLE_ID" --name "Teraweights" --platform IOS --yes || true
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
-            --name "$PROFILE_NAME" \
-            --save --profiles-dir "$SIGN_DIR" --json > /tmp/created.json
+            --create \
+            --profiles-dir "$SIGN_DIR"
+          keychain add-certificates
+          echo "--- profiles fetched ---"
           ls -la "$SIGN_DIR"
-          ls "$SIGN_DIR"/*.mobileprovision >/dev/null 2>&1 || { echo "create-profile saved nothing"; exit 1; }
-
+          ls "$SIGN_DIR"/*.mobileprovision >/dev/null 2>&1 || { echo "fetch-signing-files produced no profile"; exit 1; }
           # Xcode 16 and later read ~/Library/Developer/Xcode/UserData/Provisioning Profiles;
           # older Xcode reads ~/Library/MobileDevice/Provisioning Profiles. Install in both.
           for d in "$HOME/Library/MobileDevice/Provisioning Profiles" \
@@ -139,6 +108,7 @@ workflows:
           PROFILE=$(ls -t "$CM_BUILD_DIR/signing"/*.mobileprovision 2>/dev/null | head -1)
           [ -n "$PROFILE" ] || { echo "No provisioning profile in $CM_BUILD_DIR/signing"; exit 1; }
           security cms -D -i "$PROFILE" > /tmp/profile.plist
+          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' /tmp/profile.plist)
           PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' /tmp/profile.plist)
           TEAM_ID=$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' /tmp/profile.plist)
           echo "profile: $PROFILE_NAME ($PROFILE_UUID) team: $TEAM_ID"
