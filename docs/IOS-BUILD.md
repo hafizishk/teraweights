@@ -88,9 +88,11 @@ npx cap sync ios
 npx cap open ios
 ```
 
-Then in Xcode: **App** target, **Signing & Capabilities**, automatic signing,
-pick your team, connect an iPhone and press Play. Requires the full Xcode app
-from the Mac App Store, not just the command line tools.
+Open `ios/App/App.xcodeproj`. Capacitor 8 uses Swift Package Manager, so there
+is no `.xcworkspace`. Then in Xcode: **App** target, **Signing &
+Capabilities**, automatic signing, pick your team, connect an iPhone and press
+Play. Requires the full Xcode app from the Mac App Store, not just the command
+line tools.
 
 ## App Store later
 

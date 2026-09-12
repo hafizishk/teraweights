@@ -21,7 +21,6 @@ workflows:
       cocoapods: default
       vars:
         BUNDLE_ID: "sg.teraweights.app"
-        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
         # The deployed site the native shell loads. Change here if the
         # production URL changes; capacitor.config.ts reads APP_URL.
@@ -67,11 +66,20 @@ workflows:
           keychain add-certificates
           xcode-project use-profiles
 
+      # Capacitor 8 uses Swift Package Manager, so it generates only
+      # App.xcodeproj and no .xcworkspace. Older Capacitor and any project
+      # that pulls in CocoaPods does produce a workspace, so handle both.
       - name: Build the ipa
         script: |
-          xcode-project build-ipa \
-            --workspace "$XCODE_WORKSPACE" \
-            --scheme "$XCODE_SCHEME"
+          if [ -d "ios/App/App.xcworkspace" ]; then
+            xcode-project build-ipa \
+              --workspace "ios/App/App.xcworkspace" \
+              --scheme "$XCODE_SCHEME"
+          else
+            xcode-project build-ipa \
+              --project "ios/App/App.xcodeproj" \
+              --scheme "$XCODE_SCHEME"
+          fi
 
     artifacts:
       - build/ios/ipa/*.ipa

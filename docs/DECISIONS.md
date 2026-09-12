@@ -185,3 +185,8 @@ The brief put payments out of scope. After reviewing ClassPass, Stackform change
 - `environment.ios_signing` only *looks for* an existing provisioning profile and fails with "No matching profiles found" when a project has never been signed. A first build has nothing to find.
 - So the workflow registers the bundle ID and calls `app-store-connect fetch-signing-files --create` itself, which bootstraps the bundle ID, the iOS distribution certificate and the App Store profile, then `keychain add-certificates` and `xcode-project use-profiles`. It is a no-op on every later build.
 - The App Store Connect API key must have **App Manager** access; Developer access cannot create certificates.
+
+## Capacitor 8 has no .xcworkspace
+
+- Capacitor 8 pulls its native code through Swift Package Manager, not CocoaPods, so `npx cap add ios` produces `ios/App/App.xcodeproj` and no workspace. Anything that assumes `App.xcworkspace` fails: `npx cap open ios` on a Mac without Xcode opens the bare project in Finder, and `xcode-project build-ipa --workspace` exits with "Path does not exist".
+- The Codemagic build step tests for a workspace and falls back to `--project`, so it keeps working if a future plugin drags CocoaPods back in.
