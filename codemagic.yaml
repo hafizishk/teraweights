@@ -115,8 +115,11 @@ workflows:
 
           # Written with plistlib rather than a heredoc: Codemagic's runner
           # produced an invalid file from the heredoc once, so no more heredocs.
+          # method must be "app-store": the CLI validates against its own enum
+          # (ad-hoc, app-store, development, enterprise) and reports anything
+          # else, including Xcode 15's "app-store-connect", as an invalid plist.
           export TEAM_ID BUNDLE_ID PROFILE_NAME
-          python3 -c 'import plistlib, os; plistlib.dump({"method": "app-store-connect", "destination": "export", "teamID": os.environ["TEAM_ID"], "signingStyle": "manual", "signingCertificate": "Apple Distribution", "provisioningProfiles": {os.environ["BUNDLE_ID"]: os.environ["PROFILE_NAME"]}, "uploadSymbols": True}, open("/tmp/export_options.plist", "wb"))'
+          python3 -c 'import plistlib, os; plistlib.dump({"method": "app-store", "destination": "export", "teamID": os.environ["TEAM_ID"], "signingStyle": "manual", "signingCertificate": "Apple Distribution", "provisioningProfiles": {os.environ["BUNDLE_ID"]: os.environ["PROFILE_NAME"]}, "uploadSymbols": True}, open("/tmp/export_options.plist", "wb"))'
           plutil -lint /tmp/export_options.plist
           cat /tmp/export_options.plist
 
