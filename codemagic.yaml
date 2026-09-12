@@ -16,7 +16,7 @@ workflows:
       app_store_connect: teraweights
 
     environment:
-      node: 20
+      node: 22
       xcode: latest
       cocoapods: default
       vars:
