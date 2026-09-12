@@ -33,8 +33,8 @@ Codemagic's automatic signing creates it through the App Store Connect API.
 
 ### 3. Connect Codemagic (codemagic.io)
 
-1. https://codemagic.io, sign up with GitHub, allow access to `teraweights`.
-2. **Teams**, your team, **Integrations**, **App Store Connect**, **Connect**.
+1. https://codemagic.io. Scroll to **For individuals** at the bottom of the pricing page and click **Get started** there. It is free: 500 macOS minutes a month, unlimited apps, one build at a time. A build here is 10 to 15 minutes, so that is 30-odd builds a month. Sign up with GitHub and allow access to `teraweights`.
+2. **Personal Account** (or **Teams** on a paid plan), **Integrations**, **App Store Connect**, **Connect**.
 3. Name it exactly `teraweights`, to match `integrations` in `codemagic.yaml`.
 4. Paste the Issuer ID and Key ID, upload the `.p8`. Save.
 5. **Applications**, **Add application**, pick `hafizishk/teraweights`, choose the **codemagic.yaml** configuration source.
@@ -48,6 +48,10 @@ Codemagic's automatic signing creates it through the App Store Connect API.
 
 The `.ipa` is also downloadable from the build's Artifacts panel if you need the
 raw file.
+
+The individual plan is single-user. Adding the client or a teammate to the
+Codemagic account itself needs a paid plan; they do not need one to install
+from TestFlight.
 
 Build numbers come from Codemagic's own counter, so they always increase and
 App Store Connect never rejects an upload for a duplicate. The version string
