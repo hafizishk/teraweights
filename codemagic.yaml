@@ -20,6 +20,9 @@ workflows:
       xcode: latest
       cocoapods: default
       ios_signing:
+        # Codemagic fetches signing files through the App Store Connect
+        # integration, and registers the bundle ID with Apple if it does not
+        # exist yet. Nothing to create by hand at developer.apple.com.
         distribution_type: app_store
         bundle_identifier: sg.teraweights.app
       vars:
@@ -50,7 +53,7 @@ workflows:
       - name: Set version and build number
         script: |
           cd ios/App
-          agvtool new-marketing-version "$(node -p "require('../../package.json').version")"
+          agvtool new-marketing-version "$(node -p "require('../../package.json').version")" || true
           agvtool new-version -all "$PROJECT_BUILD_NUMBER"
 
       - name: Apply signing profiles
@@ -70,8 +73,7 @@ workflows:
       app_store_connect:
         auth: integration
         submit_to_testflight: true
-        # Everyone in these TestFlight groups gets the build automatically.
-        # Create the group in App Store Connect first, or drop this line and
-        # add testers by hand after the first upload.
-        beta_groups:
-          - Teraweights
+        # No beta_groups here on purpose: the build lands in TestFlight and
+        # testers are added in the browser afterwards, so there is no group to
+        # create before the first build. Add a beta_groups list later to
+        # distribute automatically.

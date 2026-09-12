@@ -12,48 +12,39 @@ or the URL changes.
 
 ## One-time setup
 
-### 1. Register the bundle ID
+Three things, all in a browser. Roughly 15 minutes, once.
 
-1. https://developer.apple.com/account, **Certificates, Identifiers & Profiles**, **Identifiers**.
-2. Click **+**, choose **App IDs**, **App**.
-3. Description `Teraweights`. Bundle ID: **Explicit**, `sg.teraweights.app`.
-4. **Continue**, **Register**.
-
-### 2. Create the app record
+### 1. Create the app record (appstoreconnect.apple.com)
 
 1. https://appstoreconnect.apple.com, **My Apps**, **+**, **New App**.
 2. Platform iOS. Name `Teraweights`. Primary language English (U.K.).
-3. Bundle ID: pick `sg.teraweights.app`. SKU `teraweights`. Full access.
+3. Bundle ID: type or pick `sg.teraweights.app`. SKU `teraweights`. Full access.
 4. **Create**.
 
-### 3. Create a TestFlight group
+The bundle ID does not need registering at developer.apple.com first.
+Codemagic's automatic signing creates it through the App Store Connect API.
 
-1. In that app, **TestFlight** tab, **Internal Testing**, **+** next to Groups.
-2. Name it exactly `Teraweights`, to match `beta_groups` in `codemagic.yaml`.
-3. Add the client's Apple ID as a tester. Internal testers need no review.
+### 2. App Store Connect API key
 
-### 4. App Store Connect API key
-
-1. App Store Connect, **Users and Access**, **Integrations**, **App Store Connect API**.
+1. App Store Connect, **Users and Access**, **Integrations**, **App Store Connect API**, **Team Keys**.
 2. **+**, name `Codemagic`, access **App Manager**. **Generate**.
-3. Download the `.p8` file. It downloads once only.
-4. Note the **Issuer ID** at the top and the **Key ID** on the row.
+3. Download the `.p8`. It downloads once only.
+4. Copy the **Issuer ID** from the top of the page and the **Key ID** from the row.
 
-### 5. Connect Codemagic
+### 3. Connect Codemagic (codemagic.io)
 
-1. https://codemagic.io, sign up with GitHub.
+1. https://codemagic.io, sign up with GitHub, allow access to `teraweights`.
 2. **Teams**, your team, **Integrations**, **App Store Connect**, **Connect**.
 3. Name it exactly `teraweights`, to match `integrations` in `codemagic.yaml`.
-4. Paste the Issuer ID, Key ID, and upload the `.p8`. Save.
-5. **Applications**, **Add application**, pick `hafizishk/teraweights`.
-6. Select **codemagic.yaml** as the configuration source.
+4. Paste the Issuer ID and Key ID, upload the `.p8`. Save.
+5. **Applications**, **Add application**, pick `hafizishk/teraweights`, choose the **codemagic.yaml** configuration source.
 
 ## Every build
 
 1. Codemagic, the Teraweights app, **Start new build**.
 2. Branch: `claude/new-session-6k3aes` (or `main` once merged). Workflow: **iOS TestFlight**.
 3. **Start build**. Roughly 10 to 15 minutes.
-4. It lands in TestFlight. Testers in the `Teraweights` group are notified automatically; they install the TestFlight app and tap Install.
+4. It lands in TestFlight. Add testers in App Store Connect, TestFlight tab, Internal Testing; they install the TestFlight app and tap Install.
 
 The `.ipa` is also downloadable from the build's Artifacts panel if you need the
 raw file.
