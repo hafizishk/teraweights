@@ -61,11 +61,17 @@ workflows:
             --splashBackgroundColor '#0b0b0b'
           npx cap sync ios
 
-      - name: Set version and build number
+      - name: Set version, build number and export compliance
         script: |
           cd ios/App
           agvtool new-marketing-version "$(node -p "require('../../package.json').version")" || true
           agvtool new-version -all "$PROJECT_BUILD_NUMBER"
+          # The app uses only HTTPS, which is exempt, so answer Apple's export
+          # compliance question in the binary. Without this every upload sits
+          # in TestFlight as "Missing Compliance" until someone answers it by
+          # hand, and the automatic TestFlight submission fails.
+          /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" App/Info.plist \
+            || /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" App/Info.plist
 
       - name: Create certificate and profile
         script: |

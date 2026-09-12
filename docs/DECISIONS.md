@@ -207,3 +207,8 @@ The brief put payments out of scope. After reviewing ClassPass, Stackform change
 
 - `ios_signing.certificates` on its own is rejected by Codemagic's schema ("Either distribution profile and bundle identifier or provisioning profiles ... must be provided"), and the automatic mode never creates a profile. So `ios_signing` is not used at all.
 - The documented manual flow is used instead: `CERTIFICATE_PRIVATE_KEY` (an RSA key generated once with `openssl genrsa 2048`, stored as a secure variable in group `signing`) plus `fetch-signing-files --create`, which makes a distribution certificate bound to that key and the App Store profile through the API, then `keychain add-certificates`. The same key every build means one certificate, created once. The earlier "Cannot save Signing Certificates without certificate private key" was exactly this variable being absent.
+
+## First TestFlight build
+
+- Build compiled, exported, uploaded and was processed by App Store Connect on 12 Sep 2026. The full signing chain is: `CERTIFICATE_PRIVATE_KEY` secure variable, `fetch-signing-files --create`, profile installed into both Xcode profile folders, explicit team, profile UUID and identity on the archive, export options written by plistlib with `method: app-store` (the CLI's enum, not Xcode's newer `app-store-connect`).
+- The build sets `ITSAppUsesNonExemptEncryption` to false in Info.plist so Apple's export compliance question is answered in the binary. The app only uses HTTPS, which is exempt. Without it every upload waits as "Missing Compliance" and the automatic TestFlight submission step fails after a successful upload.
