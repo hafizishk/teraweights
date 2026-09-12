@@ -1,97 +1,90 @@
-# Building the iOS app (.ipa)
+# Building the iOS app (.ipa) and shipping to TestFlight
 
-The member app is a server-rendered Next.js site on Vercel. The iOS app is a native shell (Capacitor) that opens that site full-screen in a WKWebView, with the app icon, splash and name. Nothing is bundled offline; the phone must be online, same as the PWA.
+No Mac needed. Codemagic builds it in the cloud and uploads to TestFlight. The
+config is `codemagic.yaml` at the repo root; it generates the Xcode project
+from `capacitor.config.ts` on every run, so `ios/` is never committed.
 
-## What you need before you start
+The app itself is the deployed Next.js site on Vercel, wrapped in a native
+WKWebView shell. Nothing is bundled offline, so the phone must be online, same
+as the PWA. App code changes ship through Vercel and the installed app picks
+them up on next open. You only need a new build when the icon, name, bundle ID
+or the URL changes.
 
-| Need | Why | Cost |
-|---|---|---|
-| The app deployed on Vercel at a stable URL | The shell loads it. Localhost will not work on a phone. | Free tier is fine |
-| Your Apple Developer account | Signing, TestFlight. Transfer the app to Teraweights' own account later from App Store Connect if they want it. | Already have it |
-| A Mac with Xcode 16+, or a cloud Mac (Codemagic, GitHub Actions macOS runner) | Xcode only runs on macOS. Windows cannot produce an IPA. | Free to about US$0.10 a minute |
+## One-time setup
 
-## Step 1. Deploy to Vercel
+### 1. Register the bundle ID
 
-1. Go to https://vercel.com/new, import `hafizishk/teraweights`, branch `claude/new-session-6k3aes` (or main once merged).
-2. Environment variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Do not set `DEV_LOGIN_ENABLED`.
-3. Deploy. Note the URL, e.g. `https://teraweights.vercel.app`.
-4. In Supabase, Authentication, URL Configuration: add that URL to Site URL and Redirect URLs, or the email code sign-in will bounce.
-5. Open the URL on your phone in Safari and sign in once. If that works, the shell will work.
+1. https://developer.apple.com/account, **Certificates, Identifiers & Profiles**, **Identifiers**.
+2. Click **+**, choose **App IDs**, **App**.
+3. Description `Teraweights`. Bundle ID: **Explicit**, `sg.teraweights.app`.
+4. **Continue**, **Register**.
 
-## Step 2. Generate the Xcode project (on the Mac)
+### 2. Create the app record
+
+1. https://appstoreconnect.apple.com, **My Apps**, **+**, **New App**.
+2. Platform iOS. Name `Teraweights`. Primary language English (U.K.).
+3. Bundle ID: pick `sg.teraweights.app`. SKU `teraweights`. Full access.
+4. **Create**.
+
+### 3. Create a TestFlight group
+
+1. In that app, **TestFlight** tab, **Internal Testing**, **+** next to Groups.
+2. Name it exactly `Teraweights`, to match `beta_groups` in `codemagic.yaml`.
+3. Add the client's Apple ID as a tester. Internal testers need no review.
+
+### 4. App Store Connect API key
+
+1. App Store Connect, **Users and Access**, **Integrations**, **App Store Connect API**.
+2. **+**, name `Codemagic`, access **App Manager**. **Generate**.
+3. Download the `.p8` file. It downloads once only.
+4. Note the **Issuer ID** at the top and the **Key ID** on the row.
+
+### 5. Connect Codemagic
+
+1. https://codemagic.io, sign up with GitHub.
+2. **Teams**, your team, **Integrations**, **App Store Connect**, **Connect**.
+3. Name it exactly `teraweights`, to match `integrations` in `codemagic.yaml`.
+4. Paste the Issuer ID, Key ID, and upload the `.p8`. Save.
+5. **Applications**, **Add application**, pick `hafizishk/teraweights`.
+6. Select **codemagic.yaml** as the configuration source.
+
+## Every build
+
+1. Codemagic, the Teraweights app, **Start new build**.
+2. Branch: `claude/new-session-6k3aes` (or `main` once merged). Workflow: **iOS TestFlight**.
+3. **Start build**. Roughly 10 to 15 minutes.
+4. It lands in TestFlight. Testers in the `Teraweights` group are notified automatically; they install the TestFlight app and tap Install.
+
+The `.ipa` is also downloadable from the build's Artifacts panel if you need the
+raw file.
+
+Build numbers come from Codemagic's own counter, so they always increase and
+App Store Connect never rejects an upload for a duplicate. The version string
+comes from `package.json`.
+
+## Changing things
+
+- **The URL the app loads**: `APP_URL` in `codemagic.yaml`, and the default in `capacitor.config.ts`.
+- **Bundle ID**: `capacitor.config.ts`, then `BUNDLE_ID` and `ios_signing.bundle_identifier` in `codemagic.yaml`, and register the new ID with Apple.
+- **Icon and splash**: `assets/icon.png` (1024) and `assets/splash.png` (2732) are committed and used automatically. Regenerate them from `scripts/icons/*.html` with `npm run icons` when the client sends the real logo.
+
+## If you do have a Mac
 
 ```bash
-git clone https://github.com/hafizishk/teraweights.git
-cd teraweights
-git checkout claude/new-session-6k3aes
 npm install
-APP_URL=https://teraweights.vercel.app npx cap add ios
-APP_URL=https://teraweights.vercel.app npx cap sync ios
-```
-
-`APP_URL` is the Vercel URL from step 1. This creates an `ios/` folder. Commit it.
-
-## Step 3. Icon and splash
-
-```bash
-npm install -D @capacitor/assets
-npx capacitor-assets generate --ios --iconBackgroundColor '#0b0b0b' --splashBackgroundColor '#0b0b0b'
-```
-
-`assets/icon.png` (1024) and `assets/splash.png` (2732) are committed, so this needs no extra input. They are rendered from `scripts/icons/icon.html` and `splash.html` by `npm run icons`, which needs Chromium; re-run it after the client sends the real logo, then re-run the command above.
-
-## Step 4. Open in Xcode and sign
-
-```bash
+npx cap add ios
+npx cap sync ios
 npx cap open ios
 ```
 
-1. In the left panel click **App** (the blue project icon), then the **App** target, then **Signing & Capabilities**.
-2. Tick **Automatically manage signing**. Pick the Team (the Apple Developer account from above).
-3. Bundle Identifier is `sg.teraweights.app` from `capacitor.config.ts`. Change it there, not in Xcode, if the client wants something else, then re-run `npx cap sync ios`.
-4. In **General**, set Display Name `Teraweights`, Version `0.1.0`, Build `1`.
-
-## Step 5. Run on your own iPhone (quick check)
-
-1. Plug in the iPhone. On the phone, Settings, Privacy & Security, Developer Mode, on.
-2. In Xcode's top bar pick your iPhone as the destination, press the Play button.
-3. First time: on the phone, Settings, General, VPN & Device Management, trust the developer certificate.
-
-The app opens straight onto the sign-in screen. Sign in as Aisyah by email code.
-
-## Step 6. Make the .ipa
-
-For the client to install without a cable, use TestFlight. It needs the app in App Store Connect but nothing is published.
-
-1. https://appstoreconnect.apple.com, My Apps, plus, New App. Platform iOS, name Teraweights, bundle ID `sg.teraweights.app`, SKU `teraweights`.
-2. In Xcode: top bar destination **Any iOS Device (arm64)**. Menu **Product, Archive**. Wait.
-3. The Organizer window opens. Select the archive, **Distribute App**, **TestFlight & App Store**, **Upload**. Keep every default. Upload.
-4. Ten to thirty minutes later it shows in App Store Connect under TestFlight. Add the client's Apple ID as an **Internal Tester** (up to 100, no review needed). They get an email, install the TestFlight app, tap Install.
-
-To hand over a raw `.ipa` file instead (for an MDM or a sideloading tool): in step 3 choose **Custom**, then **Ad Hoc** or **Development**, then **Export**. Ad Hoc only installs on iPhones whose UDIDs you added under Certificates, Identifiers & Profiles, Devices. TestFlight is easier for a demo.
-
-## Step 7. Each new build
-
-```bash
-git pull
-APP_URL=https://teraweights.vercel.app npx cap sync ios
-```
-
-Only needed when the shell changes (icon, name, config). App code changes go live on Vercel and the shell picks them up on next open, no new IPA.
-
-Bump **Build** by one in Xcode before every Archive, or App Store Connect rejects the upload.
-
-## No Mac at all
-
-Codemagic (https://codemagic.io) builds Capacitor iOS apps in the cloud and uploads to TestFlight. Free tier is 500 build minutes a month.
-
-1. Sign up with GitHub, add the `teraweights` repo.
-2. Team settings, Integrations, App Store Connect: add an API key (App Store Connect, Users and Access, Integrations, Team Keys, generate, download the `.p8`).
-3. Codemagic, Code signing identities, iOS: **Fetch from App Store Connect** using that key. It creates the certificate and profile for you.
-4. Add a `codemagic.yaml` at the repo root (Codemagic's Capacitor template, workflow `ios-workflow`, with `npm ci`, `npx cap add ios`, `npx cap sync ios`, `xcode-project use-profiles`, `xcode-project build-ipa`, publish to TestFlight). Start a build.
-
-Twenty minutes of setup, then every build is one click and lands in TestFlight.
+Then in Xcode: **App** target, **Signing & Capabilities**, automatic signing,
+pick your team, connect an iPhone and press Play. Requires the full Xcode app
+from the Mac App Store, not just the command line tools.
 
 ## App Store later
 
-Apple reviews web wrappers strictly (guideline 4.2, minimum functionality). TestFlight for members and the PWA for everyone else is fine for the demo and the first months. For a public App Store listing, add native pieces first: push notifications, the camera check-in through the native scanner, and offline caching of the schedule.
+Apple reviews web wrappers strictly under guideline 4.2, minimum
+functionality. TestFlight for members and the PWA for everyone else is fine for
+the demo and the first months. For a public listing, add native pieces first:
+push notifications, camera check-in through the native scanner, and offline
+caching of the schedule.

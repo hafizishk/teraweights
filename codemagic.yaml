@@ -1,0 +1,77 @@
+# Cloud iOS build. Produces a signed .ipa and uploads it to TestFlight.
+# Nothing here needs a Mac: Codemagic generates the Xcode project from
+# capacitor.config.ts on every run, so the ios/ folder is never committed.
+#
+# One-time setup is in docs/IOS-BUILD.md.
+
+workflows:
+  ios-testflight:
+    name: iOS TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+
+    integrations:
+      # Must match the App Store Connect integration name in
+      # Codemagic > Teams > Integrations. Rename there or here if it differs.
+      app_store_connect: teraweights
+
+    environment:
+      node: 20
+      xcode: latest
+      cocoapods: default
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: sg.teraweights.app
+      vars:
+        BUNDLE_ID: "sg.teraweights.app"
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+        # The deployed site the native shell loads. Change here if the
+        # production URL changes; capacitor.config.ts reads APP_URL.
+        APP_URL: "https://teraweights.vercel.app"
+
+    scripts:
+      - name: Install dependencies
+        script: npm ci
+
+      - name: Generate the Xcode project
+        script: |
+          if [ ! -d ios ]; then npx cap add ios; fi
+          npx cap sync ios
+
+      - name: Icon and splash
+        script: |
+          npm install -D @capacitor/assets
+          npx capacitor-assets generate --ios \
+            --iconBackgroundColor '#0b0b0b' \
+            --splashBackgroundColor '#0b0b0b'
+          npx cap sync ios
+
+      - name: Set version and build number
+        script: |
+          cd ios/App
+          agvtool new-marketing-version "$(node -p "require('../../package.json').version")"
+          agvtool new-version -all "$PROJECT_BUILD_NUMBER"
+
+      - name: Apply signing profiles
+        script: xcode-project use-profiles
+
+      - name: Build the ipa
+        script: |
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        # Everyone in these TestFlight groups gets the build automatically.
+        # Create the group in App Store Connect first, or drop this line and
+        # add testers by hand after the first upload.
+        beta_groups:
+          - Teraweights

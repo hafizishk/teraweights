@@ -173,3 +173,9 @@ The brief put payments out of scope. After reviewing ClassPass, Stackform change
 
 - `assets/icon.png` (1024) and `assets/splash.png` / `splash-dark.png` (2732) are committed so `npx capacitor-assets generate --ios` works on a fresh clone with no extra input. Without them it exits with "Asset directory not found" and the app ships Capacitor's default icon.
 - They render from `scripts/icons/icon.html` (the TW monogram, already the PWA icon) and a new `splash.html` (the full wordmark and pulse rule), through `npm run icons`. Chromium cannot open a 2732px window, so both are shot at half size with a device scale factor of 2. Re-run `npm run icons` when the client sends the real logo.
+
+## iOS ships through Codemagic, not a local Xcode
+
+- **Cloud build.** `codemagic.yaml` builds the signed `.ipa` on a hosted Mac and uploads it to TestFlight. Xcode on a laptop is a 10 GB install plus device registration plus keychain prompts, none of which a one-week demo needs. The local Xcode route still works and is documented, but it is the fallback.
+- **`ios/` is not committed.** Codemagic runs `npx cap add ios` on every build, so the native project is always regenerated from `capacitor.config.ts`. Nothing to keep in sync, nothing to merge, and the bundle ID and URL have exactly one source of truth.
+- **Build numbers come from Codemagic's counter** and the version from `package.json`, so App Store Connect never rejects an upload as a duplicate and nobody has to remember to bump anything.
