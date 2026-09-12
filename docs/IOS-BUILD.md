@@ -38,7 +38,7 @@ npm install -D @capacitor/assets
 npx capacitor-assets generate --ios --iconBackgroundColor '#0b0b0b' --splashBackgroundColor '#0b0b0b'
 ```
 
-It reads `public/icons/icon-512.png`. For a nicer splash, put a 2732x2732 PNG at `assets/splash.png` first. Once the client sends the real logo, regenerate.
+`assets/icon.png` (1024) and `assets/splash.png` (2732) are committed, so this needs no extra input. They are rendered from `scripts/icons/icon.html` and `splash.html` by `npm run icons`, which needs Chromium; re-run it after the client sends the real logo, then re-run the command above.
 
 ## Step 4. Open in Xcode and sign
 

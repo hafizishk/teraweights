@@ -168,3 +168,8 @@ The brief put payments out of scope. After reviewing ClassPass, Stackform change
 ## Sign-in code length is not hardcoded
 
 - Supabase's email OTP length is a project setting, and a project sending 8 digits into a form that accepted only 6 could not sign anyone in. `lib/rules/otp.ts` accepts 6 to 10 digits and is shared by the input's `pattern` and `maxLength`, the server action's validation and the copy, so changing the Supabase setting can never break sign-in again. Copy says "a code", not "a 6-digit code".
+
+## Native app icon and splash
+
+- `assets/icon.png` (1024) and `assets/splash.png` / `splash-dark.png` (2732) are committed so `npx capacitor-assets generate --ios` works on a fresh clone with no extra input. Without them it exits with "Asset directory not found" and the app ships Capacitor's default icon.
+- They render from `scripts/icons/icon.html` (the TW monogram, already the PWA icon) and a new `splash.html` (the full wordmark and pulse rule), through `npm run icons`. Chromium cannot open a 2732px window, so both are shot at half size with a device scale factor of 2. Re-run `npm run icons` when the client sends the real logo.
