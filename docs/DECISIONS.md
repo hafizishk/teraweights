@@ -179,3 +179,9 @@ The brief put payments out of scope. After reviewing ClassPass, Stackform change
 - **Cloud build.** `codemagic.yaml` builds the signed `.ipa` on a hosted Mac and uploads it to TestFlight. Xcode on a laptop is a 10 GB install plus device registration plus keychain prompts, none of which a one-week demo needs. The local Xcode route still works and is documented, but it is the fallback.
 - **`ios/` is not committed.** Codemagic runs `npx cap add ios` on every build, so the native project is always regenerated from `capacitor.config.ts`. Nothing to keep in sync, nothing to merge, and the bundle ID and URL have exactly one source of truth.
 - **Build numbers come from Codemagic's counter** and the version from `package.json`, so App Store Connect never rejects an upload as a duplicate and nobody has to remember to bump anything.
+
+## Codemagic signing is explicit, not automatic
+
+- `environment.ios_signing` only *looks for* an existing provisioning profile and fails with "No matching profiles found" when a project has never been signed. A first build has nothing to find.
+- So the workflow registers the bundle ID and calls `app-store-connect fetch-signing-files --create` itself, which bootstraps the bundle ID, the iOS distribution certificate and the App Store profile, then `keychain add-certificates` and `xcode-project use-profiles`. It is a no-op on every later build.
+- The App Store Connect API key must have **App Manager** access; Developer access cannot create certificates.

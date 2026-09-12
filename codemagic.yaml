@@ -19,12 +19,6 @@ workflows:
       node: 20
       xcode: latest
       cocoapods: default
-      ios_signing:
-        # Codemagic fetches signing files through the App Store Connect
-        # integration, and registers the bundle ID with Apple if it does not
-        # exist yet. Nothing to create by hand at developer.apple.com.
-        distribution_type: app_store
-        bundle_identifier: sg.teraweights.app
       vars:
         BUNDLE_ID: "sg.teraweights.app"
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
@@ -56,8 +50,22 @@ workflows:
           agvtool new-marketing-version "$(node -p "require('../../package.json').version")" || true
           agvtool new-version -all "$PROJECT_BUILD_NUMBER"
 
-      - name: Apply signing profiles
-        script: xcode-project use-profiles
+      # Signing is done by hand rather than through environment.ios_signing,
+      # because the automatic path only looks for existing profiles and fails
+      # on a first build. --create bootstraps the bundle ID, the distribution
+      # certificate and the App Store profile, and is a no-op afterwards.
+      - name: Register the bundle ID
+        script: |
+          app-store-connect create-bundle-id "$BUNDLE_ID" \
+            --name "Teraweights" --platform IOS --yes || true
+
+      - name: Fetch or create signing files
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE --create
+          keychain add-certificates
+          xcode-project use-profiles
 
       - name: Build the ipa
         script: |

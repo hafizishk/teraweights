@@ -21,8 +21,10 @@ Three things, all in a browser. Roughly 15 minutes, once.
 3. Bundle ID: type or pick `sg.teraweights.app`. SKU `teraweights`. Full access.
 4. **Create**.
 
-The bundle ID does not need registering at developer.apple.com first.
-Codemagic's automatic signing creates it through the App Store Connect API.
+The bundle ID does not need registering at developer.apple.com first. The
+build registers it, creates the distribution certificate and creates the App
+Store provisioning profile on its first run, through the App Store Connect API
+key below. That key therefore needs **App Manager** access, not Developer.
 
 ### 2. App Store Connect API key
 
@@ -56,6 +58,20 @@ from TestFlight.
 Build numbers come from Codemagic's own counter, so they always increase and
 App Store Connect never rejects an upload for a duplicate. The version string
 comes from `package.json`.
+
+## If a build fails on signing
+
+`No matching profiles found for bundle identifier ... and distribution type
+"app_store"` means the signing assets do not exist at Apple yet and something
+stopped the build creating them. Check, in order:
+
+1. The API key has **App Manager** access. Developer access cannot create certificates.
+2. Your team has fewer than three iOS Distribution certificates. Apple caps it at three; revoke an unused one at developer.apple.com, Certificates.
+3. The app record exists in App Store Connect with bundle ID `sg.teraweights.app`.
+
+As a last resort, register the ID by hand: developer.apple.com, Certificates
+Identifiers & Profiles, Identifiers, **+**, App IDs, App, Explicit,
+`sg.teraweights.app`, Register. Then re-run the build.
 
 ## Changing things
 
