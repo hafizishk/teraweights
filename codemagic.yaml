@@ -19,6 +19,16 @@ workflows:
       node: 22
       xcode: latest
       cocoapods: default
+      # Uses the Apple Distribution certificate generated in Codemagic,
+      # Personal Account > Code signing identities > iOS certificates >
+      # Generate certificate. Codemagic holds that certificate's private key,
+      # so it can fetch or create the App Store profile for the bundle ID.
+      # A certificate Apple already has but whose key Codemagic lacks is
+      # useless to it: that is the "Cannot save Signing Certificates without
+      # certificate private key" failure.
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: sg.teraweights.app
       vars:
         BUNDLE_ID: "sg.teraweights.app"
         XCODE_SCHEME: "App"
@@ -49,41 +59,6 @@ workflows:
           agvtool new-marketing-version "$(node -p "require('../../package.json').version")" || true
           agvtool new-version -all "$PROJECT_BUILD_NUMBER"
 
-      # Signing is done by hand rather than through environment.ios_signing,
-      # because the automatic path only looks for existing profiles and fails
-      # on a first build. --create bootstraps the bundle ID, the distribution
-      # certificate and the App Store profile, and is a no-op afterwards.
-      - name: Register the bundle ID
-        script: |
-          app-store-connect create-bundle-id "$BUNDLE_ID" \
-            --name "Teraweights" --platform IOS --yes || true
-
-      # --project is pinned: the default pattern is **/*.xcodeproj, and
-      # Capacitor 8's Swift Package checkouts contain their own Xcode
-      # projects, so an unpinned run can apply the profile to the wrong one
-      # and leave the App target unsigned.
-      - name: Fetch or create signing files
-        script: |
-          set -e
-          SIGN_DIR="$CM_BUILD_DIR/signing"
-          mkdir -p "$SIGN_DIR/profiles"
-          keychain initialize
-          app-store-connect fetch-signing-files "$BUNDLE_ID" \
-            --type IOS_APP_STORE --create \
-            --profiles-dir "$SIGN_DIR/profiles"
-          keychain add-certificates
-          echo "--- profiles fetched ---"
-          ls -la "$SIGN_DIR/profiles"
-          ls "$SIGN_DIR/profiles"/*.mobileprovision >/dev/null 2>&1 \
-            || { echo "fetch-signing-files produced no profile"; exit 1; }
-          # Xcode 16 and later read ~/Library/Developer/Xcode/UserData/Provisioning Profiles;
-          # older Xcode reads ~/Library/MobileDevice/Provisioning Profiles. Install in both.
-          for d in "$HOME/Library/MobileDevice/Provisioning Profiles" \
-                   "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"; do
-            mkdir -p "$d"
-            cp "$SIGN_DIR/profiles"/*.mobileprovision "$d"/
-          done
-
       - name: Show what got signed
         script: |
           echo "--- profiles on disk ---"
@@ -101,8 +76,10 @@ workflows:
       - name: Build the ipa
         script: |
           set -e
-          PROFILE=$(ls -t "$CM_BUILD_DIR/signing/profiles"/*.mobileprovision 2>/dev/null | head -1)
-          [ -n "$PROFILE" ] || { echo "No provisioning profile in $CM_BUILD_DIR/signing/profiles"; exit 1; }
+          PROFILE=$(ls -t "$HOME/Library/MobileDevice/Provisioning Profiles"/*.mobileprovision \
+                          "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"/*.mobileprovision \
+                          2>/dev/null | head -1)
+          [ -n "$PROFILE" ] || { echo "No provisioning profile installed by ios_signing"; exit 1; }
           security cms -D -i "$PROFILE" > /tmp/profile.plist
           PROFILE_NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' /tmp/profile.plist)
           PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' /tmp/profile.plist)

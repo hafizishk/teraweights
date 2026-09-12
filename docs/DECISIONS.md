@@ -190,3 +190,9 @@ The brief put payments out of scope. After reviewing ClassPass, Stackform change
 
 - Capacitor 8 pulls its native code through Swift Package Manager, not CocoaPods, so `npx cap add ios` produces `ios/App/App.xcodeproj` and no workspace. Anything that assumes `App.xcworkspace` fails: `npx cap open ios` on a Mac without Xcode opens the bare project in Finder, and `xcode-project build-ipa --workspace` exits with "Path does not exist".
 - The Codemagic build step tests for a workspace and falls back to `--project`, so it keeps working if a future plugin drags CocoaPods back in.
+
+## Signing certificate is generated inside Codemagic
+
+- The manual `fetch-signing-files --create` route failed with "Cannot save Signing Certificates without certificate private key". The Apple team already has iOS Distribution certificates from Stackform's other apps; Codemagic can see them but holds none of their private keys, so it can neither reuse one nor conclude it should create another.
+- Fix is a certificate Codemagic itself generates through the App Store Connect key (Code signing identities, iOS certificates, Generate certificate). It keeps the private key. `environment.ios_signing` then fetches or creates the App Store profile for `sg.teraweights.app` before scripts run. The build step still passes the team, profile and identity to `xcodebuild` explicitly, read off the installed profile, so it does not depend on `use-profiles` having patched the project.
+- Xcode 16+ reads profiles from `~/Library/Developer/Xcode/UserData/Provisioning Profiles`, older Xcode from `~/Library/MobileDevice/Provisioning Profiles`; the build step looks in both.
