@@ -164,3 +164,7 @@ The brief put payments out of scope. After reviewing ClassPass, Stackform change
 - **Resend on `stackformstudios.com`.** DKIM (`resend._domainkey`), the two SPF CNAMEs (`rsend`, `send`) and a `_dmarc` record with `p=none` live in Squarespace DNS. Resend's SPF sits on the `send` subdomain, so Google Workspace's root SPF for the same domain is untouched. Sender is `noreply@stackformstudios.com` until Teraweights own a domain, then it moves.
 - **Code first, link second.** `supabase/templates/magic-link.html` replaces Supabase's default Magic Link email. The 6-digit `{{ .Token }}` is the headline, the link is a small fallback. A short branded email with one link reads far less like phishing than a bare button, which matters while a new sending domain has no reputation.
 - **Expect spam on the first sends.** A domain that has never sent mail has no reputation. Marking the first few as "not spam" and replying to one from the receiving account is what actually moves Gmail. Do this before any client demo.
+
+## Sign-in code length is not hardcoded
+
+- Supabase's email OTP length is a project setting, and a project sending 8 digits into a form that accepted only 6 could not sign anyone in. `lib/rules/otp.ts` accepts 6 to 10 digits and is shared by the input's `pattern` and `maxLength`, the server action's validation and the copy, so changing the Supabase setting can never break sign-in again. Copy says "a code", not "a 6-digit code".

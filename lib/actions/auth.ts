@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isOtpCode } from "@/lib/rules/otp";
 import { isStaff, type Role } from "@/lib/types";
 
 export type AuthState = {
@@ -31,7 +32,7 @@ async function callbackUrl(next: string | null): Promise<string> {
 /**
  * Step 1: send a sign-in email.
  *
- * Supabase sends one message carrying both a 6-digit code and a link. Either
+ * Supabase sends one message carrying both a numeric code and a link. Either
  * completes sign-in: the code through verifyOtp below, the link through
  * /auth/callback. Editing the email template to show the code requires custom
  * SMTP, so on a stock project the link is the path that works.
@@ -63,8 +64,8 @@ export async function verifyOtp(_prev: AuthState, formData: FormData): Promise<A
   const token = String(formData.get("code") ?? "").replace(/\s+/g, "");
   const next = safeNext(formData.get("next"));
 
-  if (!/^\d{6}$/.test(token)) {
-    return { step: "code", email, error: "Enter the 6-digit code from your email." };
+  if (!isOtpCode(token)) {
+    return { step: "code", email, error: "Enter the code from your email." };
   }
 
   const supabase = await createClient();

@@ -17,7 +17,7 @@ export default async function LoginPage({
       <div className="flex flex-col gap-3">
         <Wordmark className="text-[44px]" />
         <div className="heartbeat w-40" />
-        <p className="text-sm text-muted">Sign in with your email. We&apos;ll send a 6-digit code.</p>
+        <p className="text-sm text-muted">Sign in with your email. We&apos;ll send you a code.</p>
       </div>
       <LoginForm next={next} initialError={error} />
       {devLoginEnabled() ? (

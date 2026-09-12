@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { sendOtp, verifyOtp, type AuthState } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/Button";
+import { OTP_MAX, OTP_MIN } from "@/lib/rules/otp";
 
 const inputClass =
   "h-12 w-full border-0 border-b-2 border-ink-3 bg-transparent px-0 text-lg text-paper placeholder:text-muted focus:border-paper focus:outline-none";
@@ -20,15 +21,15 @@ export function LoginForm({ next, initialError }: { next?: string; initialError?
         {next ? <input type="hidden" name="next" value={next} /> : null}
         <label className="flex flex-col gap-2">
           <span className="text-sm text-muted">
-            Sent to <span className="text-paper">{state.email}</span>. Enter the 6-digit code, or
-            just tap the sign-in link in the email.
+            Sent to <span className="text-paper">{state.email}</span>. Enter the code, or just tap
+            the sign-in link in the email.
           </span>
           <input
             name="code"
             inputMode="numeric"
             autoComplete="one-time-code"
-            pattern="[0-9]{6}"
-            maxLength={6}
+            pattern={`[0-9]{${OTP_MIN},${OTP_MAX}}`}
+            maxLength={OTP_MAX}
             placeholder="123456"
             required
             autoFocus
