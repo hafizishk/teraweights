@@ -60,7 +60,7 @@ export function AvatarUpload({ userId, name, src }: { userId: string; name: stri
   }
 
   const fileInput = (
-    <input ref={input} type="file" accept="image/*" capture="user" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
+    <input ref={input} type="file" accept="image/*" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
   );
 
   return (

@@ -230,3 +230,9 @@ The brief put payments out of scope. After reviewing ClassPass, Stackform change
 - The You page made nine Supabase calls in sequence, each a full round trip: bookings, then the next session, then attendees, then the post, then coaches, then PT, then the coach, then the event. It now makes two batches. The next session's id and start time are already on the booking row, so nothing downstream had to wait for the session fetch.
 - Book fetched the profile, then the week, then its bookings by session id. `getMyBookingsBetween` filters bookings by the week's time range through the session join, so all six queries go out together.
 - `assertOnboarded(profile)` replaces `requireOnboarded` on pages that already load the profile, saving one query per page; the rule is unchanged.
+
+## Book: swipe the week strip, tap a day; photos from the gallery
+
+- The day strip is a three-page carousel (last week, this week, next week) that snaps per week. Swiping to a neighbour navigates to that week with `router.replace`, the strip re-centres on the new week, and the arrows still work for a mouse. Only the middle page has session data, so the neighbours show dates without dots. Verified headless: a swipe to the third page lands on `?w=1` and the label moves to the next week.
+- Days are buttons: tapping one scrolls the list to that day's section, which now carries an `id` and a scroll margin below the sticky header.
+- The photo picker no longer sets `capture="user"`, which on Android forced the front camera. Without it the phone offers gallery or camera.

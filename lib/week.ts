@@ -14,7 +14,7 @@ export function sgtMidnight(date: string): Date {
   return new Date(`${date}T00:00:00${SGT_OFFSET}`);
 }
 
-function addDays(date: string, days: number): string {
+export function addDays(date: string, days: number): string {
   const d = sgtMidnight(date);
   d.setUTCDate(d.getUTCDate() + days);
   return sgtDate(d);

@@ -1,18 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ClassBadge } from "@/components/ui/Badge";
 import { SessionSheet } from "@/components/member/SessionSheet";
 import { formatTime } from "@/lib/format";
-import { dayInitial, dayNumber, sgtDate, type Week } from "@/lib/week";
+import { addDays, dayInitial, dayNumber, sgtDate, type Week } from "@/lib/week";
 import type { SessionView } from "@/lib/view/session-view";
 
 /**
  * The week as a timetable. Filters are underlined words, days are a strip of
  * numerals, and each session is a ruled row with its time set large. The
  * black page is the surface; nothing sits in a box.
+ *
+ * The day strip is a three-page carousel (last week, this week, next week)
+ * that snaps per week. Swiping to a neighbour navigates to that week; the
+ * arrows do the same for a mouse. Tapping a day scrolls the list to it.
  */
 export function BookWeek({
   views,
@@ -32,8 +36,11 @@ export function BookWeek({
   trialEligible?: boolean;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const params = useSearchParams();
   const [openId, setOpenId] = useState<string | null>(openSessionId);
+  const strip = useRef<HTMLOListElement>(null);
+  const settle = useRef<number | null>(null);
 
   const today = sgtDate(new Date());
   const open = views.find((v) => v.id === openId) ?? null;
@@ -43,6 +50,30 @@ export function BookWeek({
     for (const [k, v] of Object.entries(next)) p.set(k, v);
     p.delete("s");
     return `${pathname}?${p.toString()}`;
+  }
+
+  // Three pages of seven days; only the middle one has session data.
+  const pages = [-7, 0, 7].map((shift) => week.days.map((d) => addDays(d, shift)));
+
+  // Start on the middle page without animating, every time the week changes.
+  useLayoutEffect(() => {
+    const el = strip.current;
+    if (el) el.scrollLeft = el.clientWidth;
+  }, [offset]);
+
+  function onStripScroll() {
+    const el = strip.current;
+    if (!el) return;
+    if (settle.current) window.clearTimeout(settle.current);
+    settle.current = window.setTimeout(() => {
+      const page = Math.round(el.scrollLeft / el.clientWidth);
+      if (page === 1) return;
+      router.replace(href({ w: String(offset + (page - 1)) }), { scroll: false });
+    }, 120);
+  }
+
+  function jumpToDay(day: string) {
+    document.getElementById(`day-${day}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   const byDay = week.days.map((day) => ({
@@ -85,20 +116,35 @@ export function BookWeek({
         >
           ‹
         </Link>
-        <ol className="flex flex-1 justify-between">
-          {week.days.map((day) => {
-            const count = views.filter((v) => sgtDate(v.startsAt) === day).length;
-            const isToday = day === today;
-            return (
-              <li key={day} className="flex flex-1 flex-col items-center gap-0.5">
-                <span className="eyebrow">{dayInitial(day)}</span>
-                <span className={`display tnum text-[22px] leading-none ${isToday ? "text-brand" : "text-paper"}`}>
-                  {dayNumber(day)}
-                </span>
-                <span className={`mt-0.5 h-1 w-1 rounded-full ${count ? "bg-paper/70" : "bg-transparent"}`} />
-              </li>
-            );
-          })}
+        <ol
+          ref={strip}
+          key={offset}
+          onScroll={onStripScroll}
+          aria-label="Days"
+          className="flex flex-1 snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {pages.map((days, page) => (
+            <li key={days[0]} className="flex w-full shrink-0 snap-center justify-between">
+              {days.map((day) => {
+                const count = page === 1 ? views.filter((v) => sgtDate(v.startsAt) === day).length : 0;
+                const isToday = day === today;
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => (page === 1 ? jumpToDay(day) : undefined)}
+                    className="flex flex-1 flex-col items-center gap-0.5"
+                  >
+                    <span className="eyebrow">{dayInitial(day)}</span>
+                    <span className={`display tnum text-[22px] leading-none ${isToday ? "text-brand" : "text-paper"}`}>
+                      {dayNumber(day)}
+                    </span>
+                    <span className={`mt-0.5 h-1 w-1 rounded-full ${count ? "bg-paper/70" : "bg-transparent"}`} />
+                  </button>
+                );
+              })}
+            </li>
+          ))}
         </ol>
         <Link
           href={href({ w: String(offset + 1) })}
@@ -117,7 +163,7 @@ export function BookWeek({
           {byDay
             .filter((d) => d.sessions.length > 0)
             .map(({ day, sessions }) => (
-              <section key={day}>
+              <section key={day} id={`day-${day}`} className="scroll-mt-28">
                 <h2 className="pb-1 text-base text-muted">
                   {dayInitial(day)} {dayNumber(day)}
                 </h2>
