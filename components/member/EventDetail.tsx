@@ -65,6 +65,8 @@ export function EventDetail({
       <RegisterForm
         eventId={event.id}
         slug={event.slug}
+        eventName={event.name}
+        eventDate={event.event_date}
         slots={slots}
         mode={mode}
         registration={registration}

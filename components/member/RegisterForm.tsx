@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toaster";
 import { cancelEventRegistration, registerForEvent, registerGuest } from "@/lib/actions/events";
 import type { ActionResult } from "@/lib/actions/bookings";
-import { formatTime } from "@/lib/format";
+import { formatEventDate, formatTime } from "@/lib/format";
+import { BookedSheet, type BookedDetails } from "@/components/member/BookedSheet";
 import type { MyRegistration, SlotRow } from "@/lib/queries/events";
 
 const inputClass =
@@ -64,6 +65,8 @@ function SlotPicker({
 export function RegisterForm({
   eventId,
   slug,
+  eventName,
+  eventDate,
   slots,
   mode,
   registration,
@@ -73,6 +76,9 @@ export function RegisterForm({
 }: {
   eventId: string;
   slug: string;
+  eventName: string;
+  /** YYYY-MM-DD, the event's date in Singapore. */
+  eventDate: string;
   slots: SlotRow[];
   mode: "member" | "guest";
   registration: MyRegistration | null;
@@ -85,6 +91,48 @@ export function RegisterForm({
   const [slotId, setSlotId] = useState<string | null>(slots.length === 1 ? slots[0].id : null);
   const [pending, startTransition] = useTransition();
   const [guestState, guestAction, guestPending] = useActionState<ActionResult | null, FormData>(registerGuest, null);
+  const [booked, setBooked] = useState<BookedDetails | null>(null);
+
+  function registeredDetails(message: string): BookedDetails {
+    const waitlisted = /waitlist/i.test(message);
+    const slot = slots.find((s) => s.id === slotId) ?? null;
+    const start = slot ? slot.starts_at : eventDate;
+    return {
+      heading: waitlisted ? "You're on the waitlist" : "You're registered",
+      sub: waitlisted ? "If a place opens you are moved in and it shows here." : "See you there. Registration details are on this page whenever you need them.",
+      eyebrow: "Event",
+      title: eventName,
+      when: slot ? `${formatEventDate(eventDate)} · ${slot.label}` : formatEventDate(eventDate),
+      where: null,
+      calendar: waitlisted
+        ? null
+        : {
+            kind: "event",
+            id: eventId,
+            slot: slot?.id ?? null,
+            event: {
+              uid: `event-${eventId}${slot ? `-${slot.id}` : ""}@teraweights`,
+              title: `${eventName} · Teraweights`,
+              description: slot?.label ?? null,
+              start,
+              end: slot ? new Date(new Date(slot.starts_at).getTime() + 2 * 3_600_000).toISOString() : null,
+              allDay: !slot,
+            },
+          },
+    };
+  }
+
+  if (booked) {
+    return (
+      <BookedSheet
+        details={booked}
+        onDone={() => {
+          setBooked(null);
+          router.refresh();
+        }}
+      />
+    );
+  }
 
   if (!registrationOpen) {
     return <p className="text-sm text-muted">Registration is closed for this event.</p>;
@@ -152,8 +200,11 @@ export function RegisterForm({
           onClick={() =>
             startTransition(async () => {
               const r = await registerForEvent(eventId, slug, slotId);
-              toast.show(r.ok ? r.message : r.error, r.ok ? "ok" : "error");
-              router.refresh();
+              if (r.ok) {
+                setBooked(registeredDetails(r.message));
+              } else {
+                toast.show(r.error, "error");
+              }
             })
           }
         >

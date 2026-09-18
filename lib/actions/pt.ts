@@ -14,7 +14,10 @@ function refreshMember() {
 }
 
 /** Books one PT slot. book_pt_session() re-checks hours, clashes and the pack. */
-export async function bookPtSession(coachId: string, startsAtIso: string, slotMinutes = 60): Promise<ActionResult> {
+/** ActionResult plus the new session's id, so the confirmation can offer a calendar file for it. */
+export type PtBookResult = ActionResult | { ok: true; message: string; id: string };
+
+export async function bookPtSession(coachId: string, startsAtIso: string, slotMinutes = 60): Promise<PtBookResult> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -28,9 +31,10 @@ export async function bookPtSession(coachId: string, startsAtIso: string, slotMi
   });
   if (error) return { ok: false, error: readableError(error.message, "Could not book that slot.") };
 
-  const left = (data as { credits_left: number }[] | null)?.[0]?.credits_left ?? 0;
+  const row = (data as { session_id: string; credits_left: number }[] | null)?.[0];
+  const left = row?.credits_left ?? 0;
   refreshMember();
-  return { ok: true, message: `Booked. ${left} PT ${left === 1 ? "session" : "sessions"} left on your pack.` };
+  return { ok: true, message: `Booked. ${left} PT ${left === 1 ? "session" : "sessions"} left on your pack.`, id: row?.session_id ?? "" };
 }
 
 export async function cancelPtSession(id: string): Promise<ActionResult> {

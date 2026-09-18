@@ -6,6 +6,8 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toaster";
 import { bookPtSession } from "@/lib/actions/pt";
+import { BookedSheet, type BookedDetails } from "@/components/member/BookedSheet";
+import { CANCELLATION_CUTOFF_HOURS as CUTOFF } from "@/lib/rules/cancellation";
 import { formatDay, formatTime, shortVenue } from "@/lib/format";
 import { CANCELLATION_CUTOFF_HOURS } from "@/lib/rules/cancellation";
 import { dayInitial, dayNumber, sgtDate } from "@/lib/week";
@@ -44,6 +46,7 @@ export function PtSlotPicker({ coaches, sessionsLeft }: { coaches: PickerCoach[]
   const [day, setDay] = useState(firstOpenDay);
   const activeDay = days.some(([d]) => d === day) ? day : firstOpenDay;
   const [picked, setPicked] = useState<string | null>(null);
+  const [booked, setBooked] = useState<BookedDetails | null>(null);
   const slots = days.find(([d]) => d === activeDay)?.[1] ?? [];
   const chosen = slots.find((s) => s.startsAt === picked) ?? null;
 
@@ -51,10 +54,36 @@ export function PtSlotPicker({ coaches, sessionsLeft }: { coaches: PickerCoach[]
     if (!coach || !chosen) return;
     startTransition(async () => {
       const result = await bookPtSession(coach.id, chosen.startsAt, chosen.slotMinutes);
-      toast.show(result.ok ? result.message : result.error, result.ok ? "ok" : "error");
-      if (result.ok) router.push("/app/pt");
+      if (!result.ok) {
+        toast.show(result.error, "error");
+        return;
+      }
+      const id = "id" in result ? result.id : "";
+      setBooked({
+        heading: "You're all set",
+        sub: `${coach.name.split(" ")[0]} has it in the diary. ${result.message} Cancel at least ${CUTOFF} hours ahead if plans change.`,
+        eyebrow: "Personal training",
+        title: `PT with ${coach.name.split(" ")[0]}`,
+        when: `${formatDay(chosen.startsAt)} · ${formatTime(chosen.startsAt)}–${formatTime(chosen.endsAt)}`,
+        where: chosen.venueName ? shortVenue(chosen.venueName) : "Venue agreed with your coach",
+        calendar: id
+          ? {
+              kind: "pt",
+              id,
+              event: {
+                uid: `pt-${id}@teraweights`,
+                title: `PT with ${coach.name.split(" ")[0]} · Teraweights`,
+                location: chosen.venueName,
+                start: chosen.startsAt,
+                end: chosen.endsAt,
+              },
+            }
+          : null,
+      });
     });
   }
+
+  if (booked) return <BookedSheet details={booked} onDone={() => router.push("/app/pt")} />;
 
   if (coaches.length === 0) {
     return <p className="rule py-8 text-center text-sm text-muted">No coach has opened PT hours yet.</p>;
