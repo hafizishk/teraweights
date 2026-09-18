@@ -218,3 +218,8 @@ The brief put payments out of scope. After reviewing ClassPass, Stackform change
 - Second Codemagic workflow, `android`, on the same free Mac minutes: `npx cap add android`, icons from the committed `assets/`, then Gradle `assembleRelease` and `bundleRelease` with the version code from Codemagic's build counter and the version name from `package.json`. Outputs a signed `.apk` for direct install and an `.aab` for Play Console.
 - Signing is a keystore generated in Codemagic's Code signing identities (reference `teraweights_android`); the build appends a second `android {}` block to the generated `build.gradle` reading the `CM_KEYSTORE_*` variables Codemagic exports, since Capacitor's template ships without release signing. Groovy merges repeated blocks, so the template is not edited in place.
 - `android/` joins `ios/` in `.gitignore`; both are regenerated from `capacitor.config.ts` every run.
+
+## Both sign-in templates carry the code, and the link is a token hash
+
+- Supabase uses the **Confirm signup** template the first time an address signs in and **Magic Link** thereafter. Only Magic Link had been replaced, so a new address got the stock "Confirm your email address" link and no code. The same file now goes into both templates.
+- The link is `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email` instead of `{{ .ConfirmationURL }}`. The default is a PKCE code that only the browser that started the sign-in can redeem; from the native app, links open in the system browser and fail with "PKCE code verifier not found". A token hash is verified server-side in `/auth/callback`, which already handles it, so the link works from anywhere. In the app itself, the code is the path.
