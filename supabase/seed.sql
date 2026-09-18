@@ -20,6 +20,8 @@ set local search_path = pg_temp, public, extensions;
 -- Reset
 -- ---------------------------------------------------------------------------
 truncate table
+  public.session_metrics,
+  public.health_workouts,
   public.pt_sessions,
   public.pt_availability,
   public.coach_assignments,
