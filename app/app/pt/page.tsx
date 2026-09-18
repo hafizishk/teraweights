@@ -12,6 +12,9 @@ import { DuotonePhoto } from "@/components/member/DuotonePhoto";
 import { PtCancelButton } from "@/components/member/PtCancelButton";
 import { formatDay, formatDayTime, formatSgd, formatTime, shortVenue } from "@/lib/format";
 import { photoForClass } from "@/lib/photos";
+import { getMyPtMetrics } from "@/lib/queries/health";
+import { maxHeartRate, summariseSamples } from "@/lib/rules/zones";
+import { SessionMetrics, ZoneStrip } from "@/components/member/SessionMetrics";
 
 export const metadata = { title: "Personal training" };
 
@@ -29,9 +32,11 @@ export default async function PtPage() {
   await requireOnboarded(supabase, uid);
   const now = new Date();
 
-  const [packages, sessions, coaches, defs, { data: assignment }] = await Promise.all([
+  const [packages, sessions, metrics, { data: me }, coaches, defs, { data: assignment }] = await Promise.all([
     getMemberPackages(supabase, uid),
     getMyPtSessions(supabase, uid),
+    getMyPtMetrics(supabase, uid, 12),
+    supabase.from("profiles").select("max_hr").eq("id", uid).maybeSingle<{ max_hr: number | null }>(),
     getPtCoaches(supabase),
     getPackageDefinitions(supabase, { activeOnly: true }),
     supabase
@@ -49,6 +54,11 @@ export default async function PtPage() {
   const ptPacks = defs.filter((d) => d.kind === "pt");
   const left = pack?.credits_remaining ?? 0;
   const done = past.filter((s) => s.status === "attended").length;
+
+  // Connected health: what the wearable saw in each PT hour.
+  const maxHr = maxHeartRate(me?.max_hr);
+  const summaries = new Map(metrics.map((m) => [m.pt_session_id, { m, s: summariseSamples(m.samples, maxHr) }]));
+  const last = past.map((p) => summaries.get(p.id)).find((x) => x?.s);
 
   if (!pack) {
     return (
@@ -151,6 +161,19 @@ export default async function PtPage() {
         <p className="rule pt-3 text-sm text-muted">No sessions left on this pack. Renew below to keep booking.</p>
       )}
 
+      {last?.s ? (
+        <Link href={`/app/pt/${last.m.pt_session_id}`} className="rule flex flex-col gap-3 py-4">
+          <div className="flex items-center justify-between">
+            <span className="eyebrow">
+              Your last PT · {formatDay(last.m.starts_at)} · {formatTime(last.m.starts_at)}
+            </span>
+            <span className="text-muted">›</span>
+          </div>
+          <SessionMetrics summary={last.s} kcal={last.m.kcal} compact />
+          <p className="text-sm text-muted">Strength work: lower average, short peaks on the sled. As it should be.</p>
+        </Link>
+      ) : null}
+
       {upcoming.length > 0 ? (
         <section className="flex flex-col">
           <p className="eyebrow pb-1">Booked</p>
@@ -185,15 +208,25 @@ export default async function PtPage() {
         {past.length === 0 ? (
           <p className="rule py-6 text-center text-sm text-muted">Your first session is the assessment. Book it above.</p>
         ) : (
-          past.map((s) => (
-            <div key={s.id} className="rule flex items-start gap-3 py-3">
-              <span className="display tnum w-[88px] shrink-0 text-[20px] leading-none">{formatDay(s.starts_at)}</span>
-              <div className="flex flex-1 flex-col gap-0.5">
-                <span className="text-[15px]">{s.title ?? (s.status === "no_show" ? "Missed" : "PT session")}</span>
-                {s.coach_note ? <span className="text-xs text-muted">{s.coach_note}</span> : null}
-              </div>
-            </div>
-          ))
+          past.map((s) => {
+            const hr = summaries.get(s.id);
+            return (
+              <Link key={s.id} href={`/app/pt/${s.id}`} className="rule flex items-start gap-3 py-3">
+                <span className="display tnum w-[88px] shrink-0 text-[20px] leading-none">{formatDay(s.starts_at)}</span>
+                <div className="flex flex-1 flex-col gap-0.5">
+                  <span className="text-[15px]">{s.title ?? (s.status === "no_show" ? "Missed" : "PT session")}</span>
+                  {s.coach_note ? <span className="text-xs text-muted">{s.coach_note}</span> : null}
+                  {hr?.s ? (
+                    <span className="mt-1 flex items-center gap-2 text-[11px] text-muted">
+                      <ZoneStrip minutes={hr.s.zoneMinutes} />
+                      {hr.s.avgBpm} avg{hr.m.kcal !== null ? ` · ${hr.m.kcal} kcal` : ""}
+                    </span>
+                  ) : null}
+                </div>
+                <span className="text-muted">›</span>
+              </Link>
+            );
+          })
         )}
       </section>
 

@@ -46,3 +46,13 @@ export function ZoneBar({ shares, minutes }: { shares: number[]; minutes: readon
     </div>
   );
 }
+
+/** A thumbnail zone bar for list rows, no labels. */
+export function ZoneStrip({ minutes }: { minutes: readonly number[] }) {
+  const shares = zoneShares(minutes);
+  return (
+    <span className="inline-flex h-1.5 w-14 gap-px overflow-hidden rounded-sm" aria-hidden>
+      {shares.map((w, i) => (w > 0 ? <span key={i} className={`block ${ZONE_CLASSES[i]}`} style={{ width: `${w}%` }} /> : null))}
+    </span>
+  );
+}

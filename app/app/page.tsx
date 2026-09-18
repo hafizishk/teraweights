@@ -23,7 +23,7 @@ import { PackagesList } from "@/components/member/PackagesList";
 import { memberStage } from "@/lib/rules/packs";
 import { getMyResults } from "@/lib/queries/results";
 import { personalBest } from "@/lib/rules/results";
-import { getMyMetrics, getMyWorkoutsBetween } from "@/lib/queries/health";
+import { getMyMetrics, getMyPtMetrics, getMyWorkoutsBetween } from "@/lib/queries/health";
 import { maxHeartRate, sessionLine, summariseSamples } from "@/lib/rules/zones";
 import { YourSessionCard } from "@/components/member/YourSessionCard";
 import { WeekActivity, buildWeekDays } from "@/components/member/WeekActivity";
@@ -64,7 +64,7 @@ export default async function YouPage() {
   const week = weekOf(now);
 
   // Round trip one: everything that depends only on who is signed in.
-  const [{ data: profile }, packages, allPackages, pulse, weekSessions, weekCounts, { data: bookingRows }, metrics, workouts] =
+  const [{ data: profile }, packages, allPackages, pulse, weekSessions, weekCounts, { data: bookingRows }, metrics, workouts, ptSessions, ptMetrics] =
     await Promise.all([
       supabase.from("profiles").select("*").eq("id", uid).maybeSingle<Profile>(),
       getActivePackages(supabase, uid),
@@ -79,6 +79,8 @@ export default async function YouPage() {
         .in("status", ["booked", "attended"]),
       getMyMetrics(supabase, uid, 12),
       getMyWorkoutsBetween(supabase, uid, week.startIso, week.endIso),
+      getMyPtSessions(supabase, uid),
+      getMyPtMetrics(supabase, uid, 12),
     ]);
   assertOnboarded(profile);
 
@@ -93,7 +95,8 @@ export default async function YouPage() {
     .filter((b) => b.status === "booked" && new Date(b.sessions!.starts_at) > now)
     .sort((a, b) => new Date(a.sessions!.starts_at).getTime() - new Date(b.sessions!.starts_at).getTime())[0];
 
-  const attendedAt = bookings.filter((b) => b.status === "attended").map((b) => b.sessions!.starts_at);
+  const ptAttended = ptSessions.filter((s) => s.status === "attended");
+  const attendedAt = [...bookings.filter((b) => b.status === "attended").map((b) => b.sessions!.starts_at), ...ptAttended.map((s) => s.starts_at)];
   const streakWeeks = attendanceStreakWeeks(attendedAt, now);
   const trainedThisWeek = sessionsThisWeek(attendedAt, now);
 
@@ -108,7 +111,7 @@ export default async function YouPage() {
   const ptPack = activePtPack(allPackages, now);
 
   // Round trip two.
-  const [nextSession, nextCounts, attendees, myWeekBookings, { data: announcement }, coaches, results, ptSessions, { data: coach }, { data: event }] =
+  const [nextSession, nextCounts, attendees, myWeekBookings, { data: announcement }, coaches, results, { data: coach }, { data: event }] =
     await Promise.all([
       upcoming ? getSession(supabase, upcoming.session_id) : Promise.resolve(null),
       nextOutsideWeek
@@ -128,7 +131,6 @@ export default async function YouPage() {
         .maybeSingle<AnnouncementJoin>(),
       getCoaches(supabase, now),
       getMyResults(supabase, uid),
-      ptPack ? getMyPtSessions(supabase, uid) : Promise.resolve([]),
       supabase
         .from("coach_assignments")
         .select("id, coach:profiles!coach_assignments_coach_id_fkey(full_name)")
@@ -210,10 +212,18 @@ export default async function YouPage() {
         .every((x) => x.s!.hardMinutes <= last.s!.hardMinutes)
     : false;
   const kcalBySession = new Map(metrics.map((m) => [m.session_id, m.kcal]));
-  const attendedThisWeek = bookings
-    .filter((b) => b.status === "attended" && b.sessions!.starts_at >= week.startIso && b.sessions!.starts_at < week.endIso)
-    .map((b) => ({ starts_at: b.sessions!.starts_at, kcal: kcalBySession.get(b.session_id) ?? null }));
-  const weekDays = buildWeekDays(week, attendedThisWeek, workouts);
+  const inWeek = (iso: string) => iso >= week.startIso && iso < week.endIso;
+  const classesThisWeek = bookings
+    .filter((b) => b.status === "attended" && inWeek(b.sessions!.starts_at))
+    .map((b) => ({ at: b.sessions!.starts_at, kcal: kcalBySession.get(b.session_id) ?? null }));
+  const ptKcal = new Map(ptMetrics.map((m) => [m.pt_session_id, m.kcal]));
+  const ptThisWeek = ptAttended.filter((s) => inWeek(s.starts_at)).map((s) => ({ at: s.starts_at, kcal: ptKcal.get(s.id) ?? null }));
+  const weekDays = buildWeekDays(
+    week,
+    classesThisWeek,
+    ptThisWeek,
+    workouts.map((w) => ({ at: w.started_at, kcal: w.kcal })),
+  );
   const nextBookedDay = upcoming && upcoming.sessions!.starts_at < week.endIso ? formatWeekday(upcoming.sessions!.starts_at) : null;
 
   return (

@@ -57,6 +57,7 @@ declare
   creditpack uuid := 'd0000000-0000-4000-8000-000000000002';
   east uuid := 'c0000000-0000-4000-8000-000000000001';
   s_tue uuid;
+  s_thu uuid;
   s_sat uuid;
   s_full uuid;
   r record;
@@ -68,6 +69,8 @@ begin
 
   select s.id into s_tue from public.sessions s
    where s.class_type_id = east and s.starts_at = pg_temp.demo('2026-09-15', '20:00');
+  select s.id into s_thu from public.sessions s
+   where s.class_type_id = east and s.starts_at = pg_temp.demo('2026-09-17', '20:00');
   select s.id into s_sat from public.sessions s
    where s.class_type_id = east and s.starts_at = pg_temp.demo('2026-09-19', '07:30');
   select s.id into s_full from public.sessions s
@@ -151,17 +154,17 @@ begin
       'membership') = false,
     'a West membership cannot pay for an East session');
 
-  -- Guards -----------------------------------------------------------------
+  -- Guards. Priya is on her free week and attended Tuesday, so use Thursday.
   perform pg_temp.as_user(priya);
   begin
-    perform public.apply_booking(s_tue, 'd0000000-0000-4000-8000-000000000004', 'membership');
+    perform public.apply_booking(s_thu, 'd0000000-0000-4000-8000-000000000004', 'membership');
     raise exception 'expired package was accepted';
   exception when raise_exception then
     perform pg_temp.assert(sqlerrm like '%not active%', 'expired package rejected, got: ' || sqlerrm);
   end;
 
   begin
-    perform public.apply_booking(s_tue, null, null);
+    perform public.apply_booking(s_thu, null, null);
     raise exception 'booking with no entitlement was accepted';
   exception when raise_exception then
     perform pg_temp.assert(sqlerrm like '%No active membership or credits%', 'blocked message, got: ' || sqlerrm);

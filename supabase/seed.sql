@@ -151,14 +151,15 @@ update public.profiles set role = 'coach' where id = 'a0000000-0000-4000-8000-00
 update public.profiles set role = 'admin' where id = 'a0000000-0000-4000-8000-000000000099';
 
 -- Seeded Energisers have already answered the onboarding questions, except
--- Priya (no active package), who demos first sign-in: onboarding, then the
--- free trial offer on Home.
+-- Marcus (no package), who demos first sign-in: onboarding, then the free
+-- trial offer on You. Three demo profiles: Marcus before, Priya during the
+-- free week, Aisyah four months in (see docs/DECISIONS.md, 18 Sep 2026).
 update public.profiles
    set onboarded_at = now(),
        weekly_target = 3,
        preferred_time = case when zone_pref = 'west' then 'morning' else 'evening' end
  where id::text like 'a0000000-0000-4000-8000-%'
-   and id <> 'a0000000-0000-4000-8000-000000000008';
+   and id <> 'a0000000-0000-4000-8000-000000000006';
 
 -- ---------------------------------------------------------------------------
 -- Class types
@@ -309,24 +310,19 @@ values ('d0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-0000000
         pg_temp.sgt('2026-08-17', '00:00'), pg_temp.sgt('2026-11-15', '23:59:59'), 10, 6, 'paid', 'PAYNOW-2608-AR',
         'a0000000-0000-4000-8000-000000000099', pg_temp.sgt('2026-08-17', '18:30'));
 
--- Marcus: Energise PRO 1-month, paid, expires 30 Sep
-insert into public.member_packages (id, member_id, package_id, kind, starts_at, expires_at, payment_status, payment_ref, recorded_by, purchased_at)
-values ('d0000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000006',
-        (select id from public.packages where name = 'Energise PRO 1-month'), 'membership',
-        pg_temp.sgt('2026-08-31', '00:00'), pg_temp.sgt('2026-09-30', '23:59:59'), 'paid', 'PAYNOW-2608-MT',
-        'a0000000-0000-4000-8000-000000000099', pg_temp.sgt('2026-08-31', '09:00'));
+-- Marcus: no package and no trial yet. He is the "before" profile: first
+-- sign-in, onboarding, the empty state, then the free week started live.
 
--- Marcus: PT 8-pack, 5 left, with Faizal (PT demo lives on Marcus so Aisyah
--- stays exactly as the brief describes her).
+-- Aisyah: PT 8-pack, 3 left, with Faizal. Four done, one booked.
 insert into public.member_packages (id, member_id, package_id, kind, starts_at, expires_at, credits_total, credits_remaining, payment_status, payment_ref, recorded_by, purchased_at)
-values ('d0000000-0000-4000-8000-000000000005', 'a0000000-0000-4000-8000-000000000006',
+values ('d0000000-0000-4000-8000-000000000005', 'a0000000-0000-4000-8000-000000000001',
         (select id from public.packages where name = 'PT 8-pack'), 'pt',
-        pg_temp.sgt('2026-08-25', '00:00'), pg_temp.sgt('2026-11-23', '23:59:59'), 8, 5, 'paid', 'PAYNOW-2608-MT-PT',
+        pg_temp.sgt('2026-08-25', '00:00'), pg_temp.sgt('2026-11-23', '23:59:59'), 8, 3, 'paid', 'PAYNOW-2608-AR-PT',
         'a0000000-0000-4000-8000-000000000099', pg_temp.sgt('2026-08-25', '09:00'));
 
 insert into public.coach_assignments (member_id, coach_id, notes)
-values ('a0000000-0000-4000-8000-000000000006', 'a0000000-0000-4000-8000-000000000003',
-        'Hip hinge and sled strength for Kampung Grind. Two PT a week around your Wednesday PRIME, deload the week before the race.');
+values ('a0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000003',
+        'Hip hinge and sled strength for Kampung Grind. Two PT a week around your Thursday class, deload the week before the race.');
 
 -- Faizal's open hours for PT: Tue and Thu mornings, Tue evening before East, Sat late morning.
 insert into public.pt_availability (coach_id, weekday, start_time, end_time, venue_id, slot_minutes)
@@ -339,15 +335,16 @@ select 'a0000000-0000-4000-8000-000000000003', d.weekday, d.start_time, d.end_ti
     (6, time '09:00', time '11:00')
   ) as d(weekday, start_time, end_time);
 
--- Marcus's PT so far, and the next one.
+-- Aisyah's PT so far, and the next one.
 insert into public.pt_sessions (coach_id, member_id, member_package_id, venue_id, starts_at, ends_at, status, title, coach_note)
-select 'a0000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000006', 'd0000000-0000-4000-8000-000000000005',
+select 'a0000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000005',
        (select id from public.venues where name like 'Bedok Reservoir%' limit 1),
        pg_temp.sgt(d.day, d.t), pg_temp.sgt(d.day, d.t) + interval '60 minutes', d.status, d.title, d.note
   from (values
     (date '2026-08-27', time '07:00', 'attended', 'Intro session',   'Goals set: sub-40 Kampung Grind. Baseline 1km 5:40.'),
     (date '2026-09-01', time '07:00', 'attended', 'Assessment',      'Wall balls 12/min, sled push 20 m at 60 kg felt heavy. Hinge pattern is the gap.'),
     (date '2026-09-03', time '07:00', 'attended', 'Sled + trap bar', 'Trap bar 3×5 at 70 kg, up from 65. Keep the sled short and heavy.'),
+    (date '2026-09-08', time '07:00', 'attended', 'Sled + hinge',    'Sled 4×20 m at 70 kg. Hinge is coming, keep the bar close. Next: trap bar 3×5 at 75.'),
     (date '2026-09-15', time '07:00', 'booked',   null,              null)
   ) as d(day, t, status, title, note);
 
@@ -357,6 +354,13 @@ values ('d0000000-0000-4000-8000-000000000004', 'a0000000-0000-4000-8000-0000000
         (select id from public.packages where name = 'Energise Weekday 1-month'), 'membership',
         pg_temp.sgt('2026-08-01', '00:00'), pg_temp.sgt('2026-08-31', '23:59:59'), 'paid', 'PAYNOW-2608-PN',
         'a0000000-0000-4000-8000-000000000099', pg_temp.sgt('2026-08-01', '11:00'));
+
+-- Priya: on the free Trial Week, started Mon 14 Sep, the "during" profile.
+-- Same shape as public.start_trial() writes it: 7 days, S$0, ref TRIAL.
+insert into public.member_packages (id, member_id, package_id, kind, starts_at, expires_at, payment_status, payment_ref, purchased_at, is_trial, fe_credits_remaining)
+values ('d0000000-0000-4000-8000-000000000006', 'a0000000-0000-4000-8000-000000000008',
+        (select id from public.packages where is_trial), 'membership',
+        pg_temp.sgt('2026-09-14', '09:15'), pg_temp.sgt('2026-09-21', '09:15'), 'paid', 'TRIAL', pg_temp.sgt('2026-09-14', '09:15'), true, 0);
 
 -- Others (so rosters and the members table look real)
 insert into public.member_packages (member_id, package_id, kind, starts_at, expires_at, credits_total, credits_remaining, payment_status, payment_ref, recorded_by, purchased_at)
@@ -405,11 +409,15 @@ select s.id, 'a0000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-00
      pg_temp.sgt('2026-08-25','20:00'), pg_temp.sgt('2026-08-27','20:00'), pg_temp.sgt('2026-09-01','20:00'),
      pg_temp.sgt('2026-09-03','20:00'), pg_temp.sgt('2026-09-08','20:00'));
 
--- Marcus: booked into PRIME Mon 14 Sep (membership)
-insert into public.bookings (session_id, member_id, member_package_id, status, entitlement, credits_used, created_at)
-select s.id, 'a0000000-0000-4000-8000-000000000006', 'd0000000-0000-4000-8000-000000000003', 'booked', 'membership', 0, pg_temp.sgt('2026-09-07', '19:40')
+-- Priya on her free week: attended East Tue 15 Sep 8pm, booked Sat 19 Sep 7.30am
+insert into public.bookings (session_id, member_id, member_package_id, status, entitlement, credits_used, created_at, checked_in_at)
+select s.id, 'a0000000-0000-4000-8000-000000000008', 'd0000000-0000-4000-8000-000000000006', 'attended', 'membership', 0, pg_temp.sgt('2026-09-14', '09:20'), s.starts_at - interval '9 minutes'
   from public.sessions s
- where s.starts_at = pg_temp.sgt('2026-09-14', '18:00') and s.class_type_id = 'c0000000-0000-4000-8000-000000000003';
+ where s.starts_at = pg_temp.sgt('2026-09-15', '20:00') and s.class_type_id = 'c0000000-0000-4000-8000-000000000001';
+insert into public.bookings (session_id, member_id, member_package_id, status, entitlement, credits_used, created_at)
+select s.id, 'a0000000-0000-4000-8000-000000000008', 'd0000000-0000-4000-8000-000000000006', 'booked', 'membership', 0, pg_temp.sgt('2026-09-16', '21:05')
+  from public.sessions s
+ where s.starts_at = pg_temp.sgt('2026-09-19', '07:30') and s.class_type_id = 'c0000000-0000-4000-8000-000000000001';
 
 -- Thu 10 Sep 8pm roster: Nur, Irfan (credit), Daniel, Ryan alongside Aisyah
 insert into public.bookings (session_id, member_id, member_package_id, status, entitlement, credits_used, created_at)
@@ -652,6 +660,39 @@ begin
     select b.id, 'a0000000-0000-4000-8000-000000000001', b.session_id, 'apple_health', 'Whoop 4.0',
            round(total / 61), mx, 452 + i * 5, samples, s.ends_at + interval '25 minutes'
       from public.sessions s where s.id = b.session_id;
+  end loop;
+end $$;
+
+-- Her PT sessions too: strength work reads low with short spikes on the sled.
+do $$
+declare
+  ps record;
+  i int := 0;
+  t int;
+  bpm int;
+  total numeric;
+  mx int;
+  samples jsonb;
+begin
+  for ps in
+    select id, ends_at from public.pt_sessions
+     where member_id = 'a0000000-0000-4000-8000-000000000001' and status = 'attended'
+     order by starts_at
+  loop
+    i := i + 1;
+    samples := '[]'::jsonb;
+    total := 0;
+    mx := 0;
+    for t in 0..60 loop
+      bpm := round(96 + i + 12 * least(1, t / 8.0)
+             + 58 * greatest(0, sin(pi() * ((t + i) % 5) / 5.0)) ^ 4 * (case when t between 8 and 52 then 1 else 0.3 end)
+             + ((t * 5 + i * 11) % 7) - 3);
+      samples := samples || jsonb_build_array(jsonb_build_array(t * 60, bpm));
+      total := total + bpm;
+      if bpm > mx then mx := bpm; end if;
+    end loop;
+    insert into public.session_metrics (pt_session_id, member_id, source, device, avg_bpm, max_bpm, kcal, samples, synced_at)
+    values (ps.id, 'a0000000-0000-4000-8000-000000000001', 'apple_health', 'Whoop 4.0', round(total / 61), mx, 384 + i * 11, samples, ps.ends_at + interval '25 minutes');
   end loop;
 end $$;
 

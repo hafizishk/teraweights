@@ -101,3 +101,71 @@ export async function getMyWorkoutsBetween(supabase: SupabaseClient, memberId: s
     .order("started_at", { ascending: true });
   return (data ?? []) as WorkoutRow[];
 }
+
+// ---------------------------------------------------------------------------
+// PT sessions carry the same metrics, keyed on pt_session_id.
+// ---------------------------------------------------------------------------
+
+export type PtMetricsRow = {
+  id: string;
+  pt_session_id: string;
+  source: HealthSource;
+  device: string | null;
+  avg_bpm: number;
+  max_bpm: number;
+  kcal: number | null;
+  samples: Sample[];
+  synced_at: string;
+  starts_at: string;
+  ends_at: string;
+  title: string | null;
+  coach_note: string | null;
+  coach_name: string | null;
+  venue_name: string | null;
+};
+
+type PtMetricsJoin = Omit<PtMetricsRow, "starts_at" | "ends_at" | "title" | "coach_note" | "coach_name" | "venue_name"> & {
+  pt_sessions: {
+    starts_at: string;
+    ends_at: string;
+    title: string | null;
+    coach_note: string | null;
+    venues: { name: string } | null;
+    coach: { full_name: string | null } | null;
+  } | null;
+};
+
+const PT_SELECT =
+  "id, pt_session_id, source, device, avg_bpm, max_bpm, kcal, samples, synced_at, " +
+  "pt_sessions!inner(starts_at, ends_at, title, coach_note, venues(name), coach:profiles!pt_sessions_coach_id_fkey(full_name))";
+
+function toPtRow(r: PtMetricsJoin): PtMetricsRow {
+  return {
+    id: r.id,
+    pt_session_id: r.pt_session_id,
+    source: r.source,
+    device: r.device,
+    avg_bpm: r.avg_bpm,
+    max_bpm: r.max_bpm,
+    kcal: r.kcal,
+    samples: Array.isArray(r.samples) ? r.samples : [],
+    synced_at: r.synced_at,
+    starts_at: r.pt_sessions?.starts_at ?? "",
+    ends_at: r.pt_sessions?.ends_at ?? "",
+    title: r.pt_sessions?.title ?? null,
+    coach_note: r.pt_sessions?.coach_note ?? null,
+    coach_name: r.pt_sessions?.coach?.full_name ?? null,
+    venue_name: r.pt_sessions?.venues?.name ?? null,
+  };
+}
+
+/** The member's PT metrics, newest session first. */
+export async function getMyPtMetrics(supabase: SupabaseClient, memberId: string, limit = 20): Promise<PtMetricsRow[]> {
+  const { data } = await supabase.from("session_metrics").select(PT_SELECT).eq("member_id", memberId).not("pt_session_id", "is", null).limit(limit);
+  return ((data ?? []) as unknown as PtMetricsJoin[]).map(toPtRow).sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
+}
+
+export async function getMetricsForPtSession(supabase: SupabaseClient, memberId: string, ptSessionId: string): Promise<PtMetricsRow | null> {
+  const { data } = await supabase.from("session_metrics").select(PT_SELECT).eq("member_id", memberId).eq("pt_session_id", ptSessionId).maybeSingle();
+  return data ? toPtRow(data as unknown as PtMetricsJoin) : null;
+}

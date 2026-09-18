@@ -43,16 +43,16 @@ begin
   perform pg_temp.assert(exists (select 1 from public.sessions s join public.class_types c on c.id = s.class_type_id where c.slug = 'prime' and starts_at = pg_temp.sgt('2026-09-14','18:00')), 'PRIME Mon 14 Sep exists');
 
   -- Aisyah
-  perform pg_temp.assert((select count(*) from public.member_packages where member_id = aisyah and payment_status = 'paid' and expires_at > pg_temp.sgt('2026-09-09','12:00')) = 2, 'Aisyah has 2 active packages');
+  perform pg_temp.assert((select count(*) from public.member_packages where member_id = aisyah and payment_status = 'paid' and expires_at > pg_temp.sgt('2026-09-09','12:00')) = 3, 'Aisyah has 3 active packages: membership, credits, PT');
   perform pg_temp.assert((select credits_remaining from public.member_packages where member_id = aisyah and kind = 'credits') = 6, 'Aisyah 6 credits');
   perform pg_temp.assert((select (expires_at at time zone 'Asia/Singapore')::date from public.member_packages where member_id = aisyah and kind = 'membership') = date '2026-09-28', 'Aisyah membership expires 28 Sep');
   perform pg_temp.assert((select (expires_at at time zone 'Asia/Singapore')::date from public.member_packages where member_id = aisyah and kind = 'credits') = date '2026-11-15', 'Aisyah credits expire 15 Nov');
   perform pg_temp.assert((select count(*) from public.bookings where member_id = aisyah and status = 'attended') = 14, 'Aisyah attended 14');
   perform pg_temp.assert(exists (select 1 from public.bookings b join public.sessions s on s.id = b.session_id where b.member_id = aisyah and b.status = 'booked' and s.starts_at = pg_temp.sgt('2026-09-10','20:00') and b.entitlement = 'membership'), 'Aisyah booked Thu 10 Sep');
   perform pg_temp.assert(not exists (select 1 from public.event_registrations where member_id = aisyah and event_id = 'e0000000-0000-4000-8000-000000000001'), 'Aisyah not yet registered for PA.ROX Sep');
-  perform pg_temp.assert(not exists (select 1 from public.coach_assignments where member_id = aisyah), 'Aisyah has no coach');
-  perform pg_temp.assert((select credits_remaining from public.member_packages where id = 'd0000000-0000-4000-8000-000000000005') = 5, 'Marcus has 5 PT sessions left');
-  perform pg_temp.assert((select count(*) from public.pt_sessions where member_id = 'a0000000-0000-4000-8000-000000000006' and status = 'attended') = 3, 'Marcus attended 3 PT');
+  perform pg_temp.assert(exists (select 1 from public.coach_assignments where member_id = aisyah and coach_id = 'a0000000-0000-4000-8000-000000000003'), 'Aisyah is assigned to Faizal');
+  perform pg_temp.assert((select credits_remaining from public.member_packages where id = 'd0000000-0000-4000-8000-000000000005') = 3, 'Aisyah has 3 PT sessions left');
+  perform pg_temp.assert((select count(*) from public.pt_sessions where member_id = 'a0000000-0000-4000-8000-000000000001' and status = 'attended') = 4, 'Aisyah attended 4 PT');
   perform pg_temp.assert((select count(*) from public.pt_availability) = 4, 'Faizal has 4 PT windows');
   select string_agg(total_seconds::text, ',' order by e.event_date) into t
     from public.event_results r join public.events e on e.id = r.event_id where r.member_id = aisyah;
@@ -60,9 +60,9 @@ begin
   perform pg_temp.assert((select count(*) from public.event_results where station_splits is not null
      and (select sum((s->>'seconds')::int) from jsonb_array_elements(station_splits) s) <> total_seconds) = 0, 'splits sum to total');
 
-  -- Marcus, Priya
-  perform pg_temp.assert(exists (select 1 from public.member_packages mp join public.packages p on p.id = mp.package_id where mp.member_id = 'a0000000-0000-4000-8000-000000000006' and p.tier = 'pro' and mp.payment_status = 'paid'), 'Marcus PRO');
-  perform pg_temp.assert((select count(*) from public.member_packages where member_id = 'a0000000-0000-4000-8000-000000000008' and expires_at > pg_temp.sgt('2026-09-09','12:00')) = 0, 'Priya has no active package');
+  -- Marcus (before), Priya (during)
+  perform pg_temp.assert((select count(*) from public.member_packages where member_id = 'a0000000-0000-4000-8000-000000000006') = 0, 'Marcus has no package');
+  perform pg_temp.assert((select count(*) from public.member_packages where member_id = 'a0000000-0000-4000-8000-000000000008' and is_trial and expires_at > pg_temp.sgt('2026-09-18','12:00')) = 1, 'Priya is on the free week');
 
   -- Events, results, announcements
   perform pg_temp.assert((select count(*) from public.events) = 6, '6 events');
@@ -102,7 +102,7 @@ begin
   -- Aisyah (member)
   perform pg_temp.as_user(aisyah);
   set local role authenticated;
-  perform pg_temp.assert((select count(*) from public.member_packages) = 2, 'RLS: Aisyah sees only her 2 packages');
+  perform pg_temp.assert((select count(*) from public.member_packages) = 3, 'RLS: Aisyah sees only her 3 packages');
   perform pg_temp.assert((select count(*) from public.bookings where member_id <> aisyah) = 0, 'RLS: Aisyah sees no other bookings');
   perform pg_temp.assert((select count(*) from public.profiles where id = priya) = 0, 'RLS: Aisyah cannot read Priya');
   perform pg_temp.assert((select count(*) from public.profiles where id = faizal) = 1, 'RLS: Aisyah can read coach display row');
@@ -193,18 +193,19 @@ end $$;
 do $$
 declare
   aisyah uuid := 'a0000000-0000-4000-8000-000000000001';
+  marcus uuid := 'a0000000-0000-4000-8000-000000000006';
   priya  uuid := 'a0000000-0000-4000-8000-000000000008';
   v_id uuid;
 begin
   perform pg_temp.assert((select count(*) from public.packages where is_trial) = 1, 'one trial package');
   perform pg_temp.assert((select price_sgd from public.packages where is_trial) = 0, 'trial is free');
 
-  -- Priya (expired membership) can start one.
-  perform pg_temp.as_user(priya);
+  -- Marcus (no package) can start one.
+  perform pg_temp.as_user(marcus);
   set local role authenticated;
   select public.start_trial() into v_id;
-  perform pg_temp.assert(v_id is not null, 'Priya starts a trial');
-  perform pg_temp.assert((select count(*) from public.member_packages where member_id = priya and is_trial and payment_status = 'paid' and expires_at > now()) = 1, 'trial is active and paid');
+  perform pg_temp.assert(v_id is not null, 'Marcus starts a trial');
+  perform pg_temp.assert((select count(*) from public.member_packages where member_id = marcus and is_trial and payment_status = 'paid' and expires_at > now()) = 1, 'trial is active and paid');
   perform pg_temp.assert((select (expires_at - starts_at) from public.member_packages where id = v_id) = interval '7 days', 'trial lasts 7 days');
 
   -- Only once.
@@ -213,6 +214,17 @@ begin
     raise exception 'second trial was allowed';
   exception when raise_exception then
     perform pg_temp.assert(sqlerrm like '%already used%', 'second trial refused, got: ' || sqlerrm);
+  end;
+  reset role;
+
+  -- Priya is already on her free week, so she cannot start another.
+  perform pg_temp.as_user(priya);
+  set local role authenticated;
+  perform pg_temp.assert((select count(*) from public.member_packages where member_id = priya and is_trial and expires_at > now()) = 1, 'Priya is on the free week');
+  begin
+    perform public.start_trial();
+    raise exception 'Priya got a second trial';
+  exception when raise_exception then null;
   end;
   reset role;
 
@@ -227,7 +239,7 @@ begin
   end;
   reset role;
 
-  -- Leave the seed as the demo expects: Priya has no active package.
+  -- Leave the seed as the demo expects: Marcus has no package.
   delete from public.member_packages where id = v_id;
 end $$;
 
@@ -325,7 +337,7 @@ begin
   perform pg_temp.assert((select count(*) from public.sessions where qr_secret is null) = 0, 'every session has a secret');
   perform pg_temp.assert((select onboarded_at from public.profiles where id = aisyah) is not null, 'seeded members are onboarded');
   perform pg_temp.assert((select weekly_target from public.profiles where id = aisyah) = 3, 'Aisyah targets 3 a week');
-  perform pg_temp.assert((select onboarded_at from public.profiles where id = 'a0000000-0000-4000-8000-000000000008') is null, 'Priya still has onboarding to do');
+  perform pg_temp.assert((select onboarded_at from public.profiles where id = 'a0000000-0000-4000-8000-000000000006') is null, 'Marcus still has onboarding to do');
 
   -- Members can read sessions but never the secret column.
   perform pg_temp.as_user(aisyah);
@@ -506,8 +518,8 @@ end $$;
 -- ---------------------------------------------------------------------------
 do $$
 declare
-  marcus uuid := 'a0000000-0000-4000-8000-000000000006';
   aisyah uuid := 'a0000000-0000-4000-8000-000000000001';
+  marcus uuid := 'a0000000-0000-4000-8000-000000000006';
   faizal uuid := 'a0000000-0000-4000-8000-000000000003';
   pack uuid := 'd0000000-0000-4000-8000-000000000005';
   sid uuid;
@@ -521,16 +533,16 @@ declare
   wed date;
 begin
   wed := thu - 1;
-  perform pg_temp.as_user(marcus);
+  perform pg_temp.as_user(aisyah);
   set local role authenticated;
 
-  -- Marcus sees his own PT and nobody else's; taken slots hide names.
-  perform pg_temp.assert((select count(*) from public.pt_sessions) = 4, 'Marcus sees his 4 PT sessions');
+  -- Aisyah sees her own PT and nobody else's; taken slots hide names.
+  perform pg_temp.assert((select count(*) from public.pt_sessions) = 5, 'Aisyah sees her 5 PT sessions');
   perform pg_temp.assert((select count(*) from public.pt_taken_slots(faizal, pg_temp.sgt('2026-09-14','00:00'), pg_temp.sgt('2026-09-21','00:00'))) > 0, 'taken slots visible');
 
   -- Books the next Thursday 8am (inside Thu 6–9) and pays one credit.
   select b.session_id, b.credits_left into sid, left_ from public.book_pt_session(faizal, pg_temp.sgt(thu,'08:00'), 60) b;
-  perform pg_temp.assert(left_ = 4, 'one PT credit spent, got ' || left_);
+  perform pg_temp.assert(left_ = 2, 'one PT credit spent, got ' || left_);
 
   -- Cannot book outside open hours, nor a clashing slot, nor the past.
   begin
@@ -552,25 +564,25 @@ begin
   -- Cancelling early returns the credit.
   select c.refunded, c.late into refunded, late from public.cancel_pt_session(sid) c;
   perform pg_temp.assert(refunded = 1 and not late, 'early cancel refunds');
-  perform pg_temp.assert((select credits_remaining from public.member_packages where id = pack) = 5, 'balance back to 5');
+  perform pg_temp.assert((select credits_remaining from public.member_packages where id = pack) = 3, 'balance back to 3');
   reset role;
 
-  -- Aisyah has no PT pack and is refused.
-  perform pg_temp.as_user(aisyah);
+  -- Marcus has no PT pack and is refused.
+  perform pg_temp.as_user(marcus);
   set local role authenticated;
   begin
     perform public.book_pt_session(faizal, pg_temp.sgt(thu,'08:00'), 60);
     raise exception 'booked PT without a pack';
   exception when sqlstate 'P0001' then null;
   end;
-  perform pg_temp.assert((select count(*) from public.pt_sessions) = 0, 'Aisyah sees no PT sessions');
+  perform pg_temp.assert((select count(*) from public.pt_sessions) = 0, 'Marcus sees no PT sessions');
   reset role;
 
-  -- The coach sees Marcus's sessions and his name.
+  -- The coach sees Aisyah's sessions and her name.
   perform pg_temp.as_user(faizal);
   set local role authenticated;
-  perform pg_temp.assert((select count(*) from public.pt_sessions where member_id = marcus) = 5, 'coach sees PT sessions incl. the cancelled one');
-  perform pg_temp.assert((select count(*) from public.profiles where id = marcus) = 1, 'coach reads PT client name');
+  perform pg_temp.assert((select count(*) from public.pt_sessions where member_id = aisyah) = 6, 'coach sees PT sessions incl. the cancelled one');
+  perform pg_temp.assert((select count(*) from public.profiles where id = aisyah) = 1, 'coach reads PT client name');
   reset role;
 
   raise notice 'PT assertions OK';
