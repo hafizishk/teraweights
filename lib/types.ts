@@ -35,6 +35,9 @@ export type Profile = {
   onboarded_at: string | null;
   staff_title: string | null;
   theme: Theme;
+  health_source: "apple_health" | "health_connect" | null;
+  health_device: string | null;
+  max_hr: number | null;
   created_at: string;
 };
 

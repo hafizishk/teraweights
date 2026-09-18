@@ -15,7 +15,7 @@ const right = [
 ] as const;
 
 /** You is the landing screen; Account, My PA.ROX, Coaches and PT hang off it, so they light it up too. */
-const YOU_ROUTES = ["/app/account", "/app/parox", "/app/coaches", "/app/pt", "/app/profile"];
+const YOU_ROUTES = ["/app/account", "/app/parox", "/app/coaches", "/app/pt", "/app/profile", "/app/session"];
 
 function isActive(href: string, pathname: string): boolean {
   return pathname.startsWith(href);

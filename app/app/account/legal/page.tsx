@@ -39,6 +39,7 @@ export default function LegalPage() {
           <li>It lives in a Supabase database and is used to run bookings, credits, results and the community feed. It is not sold or shared with advertisers.</li>
           <li>Coaches and studio admins can see your details, bookings and packages so they can run sessions and help you.</li>
           <li>Other members see your name and photo on a session only if you turn on &quot;Show me on session rosters&quot; under Your details. Results from a PA.ROX or Kampung Grind appear on that event&apos;s scoreboard.</li>
+          <li>If you connect Apple Health or Health Connect, we store heart rate and calories from sessions you checked in to, and your own workouts. Only you can see them. Coaches and other members cannot, and you can disconnect at any time in your phone&apos;s settings.</li>
           <li>Sign-in is by a one-time email code. We keep no password.</li>
           <li>To correct your details, use Your details. To delete your account and data, ask a coach or use Support.</li>
         </ul>

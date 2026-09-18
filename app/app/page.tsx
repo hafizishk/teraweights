@@ -23,6 +23,10 @@ import { PackagesList } from "@/components/member/PackagesList";
 import { memberStage } from "@/lib/rules/packs";
 import { getMyResults } from "@/lib/queries/results";
 import { personalBest } from "@/lib/rules/results";
+import { getMyMetrics, getMyWorkoutsBetween } from "@/lib/queries/health";
+import { maxHeartRate, sessionLine, summariseSamples } from "@/lib/rules/zones";
+import { YourSessionCard } from "@/components/member/YourSessionCard";
+import { WeekActivity, buildWeekDays } from "@/components/member/WeekActivity";
 import type { Profile, Role } from "@/lib/types";
 
 export const metadata = { title: "You" };
@@ -60,7 +64,7 @@ export default async function YouPage() {
   const week = weekOf(now);
 
   // Round trip one: everything that depends only on who is signed in.
-  const [{ data: profile }, packages, allPackages, pulse, weekSessions, weekCounts, { data: bookingRows }] =
+  const [{ data: profile }, packages, allPackages, pulse, weekSessions, weekCounts, { data: bookingRows }, metrics, workouts] =
     await Promise.all([
       supabase.from("profiles").select("*").eq("id", uid).maybeSingle<Profile>(),
       getActivePackages(supabase, uid),
@@ -73,6 +77,8 @@ export default async function YouPage() {
         .select("id, status, credits_used, session_id, sessions(starts_at)")
         .eq("member_id", uid)
         .in("status", ["booked", "attended"]),
+      getMyMetrics(supabase, uid, 12),
+      getMyWorkoutsBetween(supabase, uid, week.startIso, week.endIso),
     ]);
   assertOnboarded(profile);
 
@@ -193,6 +199,23 @@ export default async function YouPage() {
 
   const firstName = profile?.full_name?.split(" ")[0] ?? "Energiser";
 
+  // Connected health: the last session the wearable saw, and this week's bars.
+  const maxHr = maxHeartRate(profile?.max_hr);
+  const summaries = metrics.map((m) => ({ m, s: summariseSamples(m.samples, maxHr) }));
+  const last = summaries.find((x) => x.s);
+  const monthKey = (iso: string) => formatInTimeZone(new Date(iso), TZ, "yyyy-MM");
+  const hardestThisMonth = last
+    ? summaries
+        .filter((x) => x.s && x.m.class_slug === last.m.class_slug && monthKey(x.m.starts_at) === monthKey(last.m.starts_at))
+        .every((x) => x.s!.hardMinutes <= last.s!.hardMinutes)
+    : false;
+  const kcalBySession = new Map(metrics.map((m) => [m.session_id, m.kcal]));
+  const attendedThisWeek = bookings
+    .filter((b) => b.status === "attended" && b.sessions!.starts_at >= week.startIso && b.sessions!.starts_at < week.endIso)
+    .map((b) => ({ starts_at: b.sessions!.starts_at, kcal: kcalBySession.get(b.session_id) ?? null }));
+  const weekDays = buildWeekDays(week, attendedThisWeek, workouts);
+  const nextBookedDay = upcoming && upcoming.sessions!.starts_at < week.endIso ? formatWeekday(upcoming.sessions!.starts_at) : null;
+
   return (
     <div className="flex flex-col gap-5">
       <HomeHero
@@ -207,6 +230,17 @@ export default async function YouPage() {
         canBook={canBook}
       />
 
+      {last?.s ? (
+        <YourSessionCard
+          sessionId={last.m.session_id}
+          classSlug={last.m.class_slug}
+          startsAt={last.m.starts_at}
+          summary={last.s}
+          kcal={last.m.kcal}
+          line={sessionLine(last.s, hardestThisMonth)}
+        />
+      ) : null}
+
       <StageNudge stage={stage} trialEligible={trial.eligible} />
 
       <PulseTiles
@@ -215,6 +249,8 @@ export default async function YouPage() {
         daysToEvent={daysToEvent}
         eventShortName={eventShortName}
       />
+
+      {profile?.health_source ? <WeekActivity days={weekDays} label={week.label} nextBookedDay={nextBookedDay} /> : null}
 
       <WhoIsTraining rows={rows} weekLabel="This week" />
 

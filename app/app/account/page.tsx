@@ -60,6 +60,13 @@ export default async function AccountPage() {
           { href: "/app/account/details", title: "Your details", sub: "Name, phone, photo, zone, usual time" },
           { href: "/app#packages", title: "Packages", sub: "What you're on and what's left" },
           { href: "/app/pt", title: "Personal training", sub: "Your pack and your coach" },
+          {
+            href: "/app/account/health",
+            title: "Connected health",
+            sub: profile.health_source
+              ? `${profile.health_source === "apple_health" ? "Apple Health" : "Health Connect"}${profile.health_device ? ` · ${profile.health_device}` : ""}`
+              : "Not connected",
+          },
         ]}
       />
 
