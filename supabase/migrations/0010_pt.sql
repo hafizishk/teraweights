@@ -65,19 +65,26 @@ grant all on public.pt_availability, public.pt_sessions to service_role;
 alter table public.pt_availability enable row level security;
 alter table public.pt_sessions enable row level security;
 
+drop policy if exists "pt_availability: read" on public.pt_availability;
 create policy "pt_availability: read" on public.pt_availability
   for select to authenticated using (true);
+drop policy if exists "pt_availability: coach own" on public.pt_availability;
 create policy "pt_availability: coach own" on public.pt_availability
   for all to authenticated using (coach_id = auth.uid()) with check (coach_id = auth.uid());
+drop policy if exists "pt_availability: admin all" on public.pt_availability;
 create policy "pt_availability: admin all" on public.pt_availability
   for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
+drop policy if exists "pt_sessions: member read own" on public.pt_sessions;
 create policy "pt_sessions: member read own" on public.pt_sessions
   for select to authenticated using (member_id = auth.uid());
+drop policy if exists "pt_sessions: coach read own" on public.pt_sessions;
 create policy "pt_sessions: coach read own" on public.pt_sessions
   for select to authenticated using (coach_id = auth.uid());
+drop policy if exists "pt_sessions: coach update own" on public.pt_sessions;
 create policy "pt_sessions: coach update own" on public.pt_sessions
   for update to authenticated using (coach_id = auth.uid()) with check (coach_id = auth.uid());
+drop policy if exists "pt_sessions: admin all" on public.pt_sessions;
 create policy "pt_sessions: admin all" on public.pt_sessions
   for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
