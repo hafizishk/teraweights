@@ -150,7 +150,7 @@ export function EventForm({
         <button
           type="submit"
           disabled={pending}
-          className="display inline-flex h-11 items-center rounded-md bg-brand px-6 text-lg tracking-wide text-paper transition-colors hover:bg-brand-2 disabled:opacity-50"
+          className="display inline-flex h-11 items-center rounded-md bg-brand px-6 text-lg tracking-wide text-on-brand transition-colors hover:bg-brand-2 disabled:opacity-50"
         >
           {pending ? "Saving…" : event ? "Save event" : "Create event"}
         </button>

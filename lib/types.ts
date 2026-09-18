@@ -15,7 +15,11 @@ export type ClassSlug = "energise_east" | "energise_west" | "prime" | "fitness_e
 
 export type PreferredTime = "morning" | "evening" | "either";
 
-export type BookingStatus = "booked" | "waitlisted" | "cancelled" | "attended" | "no_show";
+/** Appearance. "system" follows the phone's setting. */
+export type Theme = "dark" | "light" | "system";
+export const THEMES: Theme[] = ["dark", "light", "system"];
+
+export type BookingStatus ="booked" | "waitlisted" | "cancelled" | "attended" | "no_show";
 
 export type Profile = {
   id: string;
@@ -30,6 +34,7 @@ export type Profile = {
   preferred_time: PreferredTime | null;
   onboarded_at: string | null;
   staff_title: string | null;
+  theme: Theme;
   created_at: string;
 };
 

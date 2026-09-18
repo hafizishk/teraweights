@@ -12,7 +12,7 @@ export function QrButton({ sessionId }: { sessionId: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="display inline-flex h-10 items-center rounded-md bg-brand px-5 text-lg tracking-wide text-paper transition-colors hover:bg-brand-2"
+        className="display inline-flex h-10 items-center rounded-md bg-brand px-5 text-lg tracking-wide text-on-brand transition-colors hover:bg-brand-2"
       >
         Show check-in QR
       </button>

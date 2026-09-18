@@ -5,6 +5,7 @@ import { signOut } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+import { ThemeToggle } from "@/components/member/ThemeToggle";
 import { version } from "@/package.json";
 import type { Profile } from "@/lib/types";
 
@@ -61,6 +62,10 @@ export default async function AccountPage() {
           { href: "/app/pt", title: "Personal training", sub: "Your pack and your coach" },
         ]}
       />
+
+      <div className="rule pt-4">
+        <ThemeToggle theme={profile.theme ?? "dark"} />
+      </div>
 
       <Rows
         rows={[

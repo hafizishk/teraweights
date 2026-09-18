@@ -46,7 +46,7 @@ export function BookedSheet({ details, onDone, doneLabel = "Done" }: { details: 
       <div className="safe-bottom relative w-full max-w-[480px] rounded-t-2xl border-t border-ink-3 bg-ink-2 p-5">
         <div className="flex flex-col items-center gap-3 pb-5 text-center">
           <span className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-brand">
-            <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#b11226" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="var(--color-brand)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M5 12.5l4.5 4.5L19 7.5" />
             </svg>
           </span>

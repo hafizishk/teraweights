@@ -144,7 +144,7 @@ export default async function PtPage() {
       />
 
       {left > 0 ? (
-        <Link href="/app/pt/book" className="display flex h-12 items-center justify-center rounded-md bg-brand text-lg tracking-wide text-paper">
+        <Link href="/app/pt/book" className="display flex h-12 items-center justify-center rounded-md bg-brand text-lg tracking-wide text-on-brand">
           Book a PT session
         </Link>
       ) : (

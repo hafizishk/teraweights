@@ -154,7 +154,7 @@ export function ResultsImport({ eventId }: { eventId: string }) {
                       {r.matchedOn ? (
                         <Badge>{matchLabels[r.matchedOn]}</Badge>
                       ) : (
-                        <Badge className="bg-brand text-paper">Unmatched</Badge>
+                        <Badge className="bg-brand text-on-brand">Unmatched</Badge>
                       )}
                     </Td>
                   </Tr>
@@ -183,7 +183,7 @@ export function ResultsImport({ eventId }: { eventId: string }) {
               type="button"
               onClick={runImport}
               disabled={importing}
-              className="display inline-flex h-11 items-center rounded-md bg-brand px-6 text-lg tracking-wide text-paper transition-colors hover:bg-brand-2 disabled:opacity-50"
+              className="display inline-flex h-11 items-center rounded-md bg-brand px-6 text-lg tracking-wide text-on-brand transition-colors hover:bg-brand-2 disabled:opacity-50"
             >
               {importing ? "Importing…" : "Confirm import"}
             </button>

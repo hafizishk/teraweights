@@ -24,13 +24,13 @@ export function StreakRing({
     <div className="flex items-center gap-3">
       <div className="relative shrink-0" style={{ width: size, height: size }} role="img" aria-label={label}>
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(244,241,236,0.18)" strokeWidth={stroke} />
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-paper)" strokeOpacity={0.18} strokeWidth={stroke} />
           <circle
             cx={size / 2}
             cy={size / 2}
             r={r}
             fill="none"
-            stroke="#f4f1ec"
+            stroke="var(--color-paper)"
             strokeWidth={stroke}
             strokeLinecap="round"
             strokeDasharray={c}

@@ -50,7 +50,7 @@ export function Sidebar({ role, name }: { role: Role; name: string }) {
               href={href}
               aria-current={active ? "page" : undefined}
               className={`display rounded-md px-3 py-2 text-lg tracking-wide ${
-                active ? "bg-brand text-paper" : "text-muted hover:bg-ink-3 hover:text-paper"
+                active ? "bg-brand text-on-brand" : "text-muted hover:bg-ink-3 hover:text-paper"
               }`}
             >
               {label}

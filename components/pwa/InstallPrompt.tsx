@@ -53,7 +53,7 @@ export function InstallPrompt() {
             if (outcome === "accepted") setDeferred(null);
             setDismissed(true);
           }}
-          className="display rounded-md bg-brand px-3 py-2 text-base leading-none tracking-wide text-paper"
+          className="display rounded-md bg-brand px-3 py-2 text-base leading-none tracking-wide text-on-brand"
         >
           Install
         </button>

@@ -22,6 +22,24 @@ begin
   perform set_config('request.jwt.claim.sub', coalesce(uid::text, ''), true);
 end $$;
 
+-- The seed is anchored to the demo week (10-19 Sep 2026) but the booking
+-- functions check the real clock, so once that week has passed every seeded
+-- session is "closed". Inside this rolled-back transaction, slide sessions
+-- and package dates forward by whole weeks until the demo week is ahead of
+-- today again. Weekdays are preserved, so every step below still holds.
+do $$
+declare
+  shift interval := make_interval(weeks => greatest(0, ceil(extract(epoch from (now() + interval '2 days') - pg_temp.sgt('2026-09-13', '07:30')) / 604800)::int));
+begin
+  perform set_config('demo.shift', shift::text, true);
+  update public.sessions set starts_at = starts_at + shift, ends_at = ends_at + shift;
+  update public.member_packages set starts_at = starts_at + shift, expires_at = expires_at + shift;
+end $$;
+
+-- A demo-week timestamp, slid forward by the same shift.
+create or replace function pg_temp.demo(d date, t time) returns timestamptz
+language sql stable as $$ select pg_temp.sgt(d, t) + current_setting('demo.shift')::interval $$;
+
 -- The cancellation cutoff must match lib/rules/cancellation.ts.
 do $$
 begin
@@ -49,11 +67,11 @@ begin
   perform pg_temp.as_user(aisyah);
 
   select s.id into s_tue from public.sessions s
-   where s.class_type_id = east and s.starts_at = pg_temp.sgt('2026-09-15', '20:00');
+   where s.class_type_id = east and s.starts_at = pg_temp.demo('2026-09-15', '20:00');
   select s.id into s_sat from public.sessions s
-   where s.class_type_id = east and s.starts_at = pg_temp.sgt('2026-09-19', '07:30');
+   where s.class_type_id = east and s.starts_at = pg_temp.demo('2026-09-19', '07:30');
   select s.id into s_full from public.sessions s
-   where s.class_type_id = east and s.starts_at = pg_temp.sgt('2026-09-13', '07:30');
+   where s.class_type_id = east and s.starts_at = pg_temp.demo('2026-09-13', '07:30');
   perform pg_temp.assert(s_tue is not null and s_sat is not null and s_full is not null, 'demo sessions exist');
 
   -- Step 2a: Tue 15 Sep is included in the weekday membership.
@@ -154,7 +172,7 @@ begin
   begin
     perform public.apply_booking(
       (select s.id from public.sessions s join public.class_types c on c.id = s.class_type_id
-        where c.slug = 'prime' and s.starts_at = pg_temp.sgt('2026-09-14', '18:00')),
+        where c.slug = 'prime' and s.starts_at = pg_temp.demo('2026-09-14', '18:00')),
       creditpack, 'credit');
     raise exception 'credit pack paid for PRIME';
   exception when raise_exception then
@@ -163,7 +181,7 @@ begin
 
   -- Roster counts are visible to members even though other bookings are not.
   select sc.booked_count into n from public.session_counts(
-    pg_temp.sgt('2026-09-13', '00:00'), pg_temp.sgt('2026-09-14', '00:00')) sc
+    pg_temp.demo('2026-09-13', '00:00'), pg_temp.demo('2026-09-14', '00:00')) sc
    where sc.session_id = s_full;
   perform pg_temp.assert(n = 5, 'session_counts reflects the cancellation, got ' || n);
 

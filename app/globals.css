@@ -12,6 +12,8 @@
   --color-muted: #8a8a8a;
   --color-west: #2b6cb0;
   --color-prime: #f2c230;
+  /* Type on a red or blue fill. Always off-white, whatever the theme. */
+  --color-on-brand: #f4f1ec;
 
   --font-display: var(--font-barlow), "Barlow Condensed", "Oswald", Impact, sans-serif;
   --font-sans: var(--font-inter), Inter, system-ui, sans-serif;
@@ -19,6 +21,45 @@
 
 :root {
   color-scheme: dark;
+}
+
+/*
+ * Light mode. Ink and paper swap roles: ink becomes the warm off-white and
+ * paper the near-black, so every bg-ink / text-paper utility flips with no
+ * component changes. Muted and PRIME darken a step to keep their contrast.
+ * The member layout sets data-theme from profiles.theme; "system" follows
+ * the phone. Admin and the public pages stay dark.
+ */
+[data-theme="light"] {
+  --color-ink: #f4f1ec;
+  --color-ink-2: #fbfaf7;
+  --color-ink-3: #ddd7cd;
+  --color-paper: #0b0b0b;
+  --color-paper-2: #2a2a2a;
+  --color-muted: #6b6864;
+  --color-prime: #9a7300;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: light) {
+  [data-theme="system"] {
+    --color-ink: #f4f1ec;
+    --color-ink-2: #fbfaf7;
+    --color-ink-3: #ddd7cd;
+    --color-paper: #0b0b0b;
+    --color-paper-2: #2a2a2a;
+    --color-muted: #6b6864;
+    --color-prime: #9a7300;
+    color-scheme: light;
+  }
+}
+/* The page behind the 480px column, and the overscroll area on a phone. */
+body:has(> [data-theme="light"]) {
+  background: #f4f1ec;
+}
+@media (prefers-color-scheme: light) {
+  body:has(> [data-theme="system"]) {
+    background: #f4f1ec;
+  }
 }
 
 html,

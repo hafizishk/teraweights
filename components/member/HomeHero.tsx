@@ -142,7 +142,7 @@ export function HomeHero({
         <div className="mx-4 mt-3">
           <Link
             href="/app/checkin/scan"
-            className="display flex h-12 w-full items-center justify-center rounded-md bg-brand text-lg tracking-wide text-paper hover:bg-brand-2"
+            className="display flex h-12 w-full items-center justify-center rounded-md bg-brand text-lg tracking-wide text-on-brand hover:bg-brand-2"
           >
             Check in
           </Link>

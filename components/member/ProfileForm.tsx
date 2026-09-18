@@ -3,6 +3,7 @@
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { Segmented } from "@/components/ui/Segmented";
 import { useToast } from "@/components/ui/Toaster";
 import { updateProfile } from "@/lib/actions/profile";
 import type { ActionResult } from "@/lib/actions/bookings";
@@ -10,21 +11,6 @@ import type { Profile } from "@/lib/types";
 
 const inputClass =
   "h-12 w-full rounded-md border border-ink-3 bg-ink px-4 text-base text-paper placeholder:text-muted focus:border-brand focus:outline-none";
-
-function Segmented({ name, value, options }: { name: string; value: string; options: { value: string; label: string }[] }) {
-  return (
-    <div className="grid gap-1 rounded-md border border-ink-3 p-1" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}>
-      {options.map((o) => (
-        <label key={o.value} className="cursor-pointer">
-          <input type="radio" name={name} value={o.value} defaultChecked={value === o.value} className="peer sr-only" />
-          <span className="display block rounded px-2 py-2 text-center text-base leading-none tracking-wide text-muted peer-checked:bg-brand peer-checked:text-paper">
-            {o.label}
-          </span>
-        </label>
-      ))}
-    </div>
-  );
-}
 
 export function ProfileForm({ profile }: { profile: Profile }) {
   const router = useRouter();

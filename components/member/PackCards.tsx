@@ -64,7 +64,7 @@ export function PlanCard({ plan, highlight = false }: { plan: Plan; highlight?: 
               onClick={() => setTermId(t.id)}
               aria-pressed={t.id === term.id}
               className={`display rounded px-1 py-2 text-center text-base leading-none tracking-wide ${
-                t.id === term.id ? "bg-brand text-paper" : "text-muted hover:text-paper"
+                t.id === term.id ? "bg-brand text-on-brand" : "text-muted hover:text-paper"
               }`}
             >
               {t.term_months} mo

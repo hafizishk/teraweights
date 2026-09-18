@@ -5,8 +5,8 @@ import type { ClassSlug } from "@/lib/types";
  * read as a mark beside the time rather than a button.
  */
 const classStyles: Record<ClassSlug, string> = {
-  energise_east: "bg-brand text-paper",
-  energise_west: "bg-west text-paper",
+  energise_east: "bg-brand text-on-brand",
+  energise_west: "bg-west text-on-brand",
   prime: "bg-prime text-ink",
   fitness_engine: "border border-paper/70 text-paper",
 };

@@ -514,7 +514,13 @@ declare
   left_ int;
   refunded int;
   late boolean;
+  -- book_pt_session refuses the past against the real clock, so the slot is
+  -- the next Thursday from today (Faizal is open Thu 6-9) and the closed
+  -- day is the Wednesday before it.
+  thu date := (current_date + 1) + ((4 - extract(isodow from current_date + 1)::int + 7) % 7);
+  wed date;
 begin
+  wed := thu - 1;
   perform pg_temp.as_user(marcus);
   set local role authenticated;
 
@@ -522,18 +528,18 @@ begin
   perform pg_temp.assert((select count(*) from public.pt_sessions) = 4, 'Marcus sees his 4 PT sessions');
   perform pg_temp.assert((select count(*) from public.pt_taken_slots(faizal, pg_temp.sgt('2026-09-14','00:00'), pg_temp.sgt('2026-09-21','00:00'))) > 0, 'taken slots visible');
 
-  -- Books Thu 17 Sep 8am (inside Thu 6–9) and pays one credit.
-  select b.session_id, b.credits_left into sid, left_ from public.book_pt_session(faizal, pg_temp.sgt('2026-09-17','08:00'), 60) b;
+  -- Books the next Thursday 8am (inside Thu 6–9) and pays one credit.
+  select b.session_id, b.credits_left into sid, left_ from public.book_pt_session(faizal, pg_temp.sgt(thu,'08:00'), 60) b;
   perform pg_temp.assert(left_ = 4, 'one PT credit spent, got ' || left_);
 
   -- Cannot book outside open hours, nor a clashing slot, nor the past.
   begin
-    perform public.book_pt_session(faizal, pg_temp.sgt('2026-09-16','08:00'), 60);
+    perform public.book_pt_session(faizal, pg_temp.sgt(wed,'08:00'), 60);
     raise exception 'booked outside open hours';
   exception when sqlstate 'P0001' then null;
   end;
   begin
-    perform public.book_pt_session(faizal, pg_temp.sgt('2026-09-17','08:00'), 60);
+    perform public.book_pt_session(faizal, pg_temp.sgt(thu,'08:00'), 60);
     raise exception 'double-booked a slot';
   exception when sqlstate 'P0001' then null;
   end;
@@ -553,7 +559,7 @@ begin
   perform pg_temp.as_user(aisyah);
   set local role authenticated;
   begin
-    perform public.book_pt_session(faizal, pg_temp.sgt('2026-09-17','08:00'), 60);
+    perform public.book_pt_session(faizal, pg_temp.sgt(thu,'08:00'), 60);
     raise exception 'booked PT without a pack';
   exception when sqlstate 'P0001' then null;
   end;

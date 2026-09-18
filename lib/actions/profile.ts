@@ -4,10 +4,28 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionResult } from "@/lib/actions/bookings";
-import type { PreferredTime, Zone } from "@/lib/types";
+import { THEMES, type PreferredTime, type Theme, type Zone } from "@/lib/types";
 
 const ZONES = new Set(["east", "west"]);
 const TIMES = new Set(["morning", "evening", "either"]);
+
+/** Appearance: dark, light or follow the phone. Saved on the profile. */
+export async function setTheme(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Please sign in again." };
+
+  const theme = String(formData.get("theme") ?? "");
+  if (!THEMES.includes(theme as Theme)) return { ok: false, error: "Pick dark, light or system." };
+
+  const { error } = await supabase.from("profiles").update({ theme }).eq("id", user.id);
+  if (error) return { ok: false, error: "Could not save. Try again." };
+
+  revalidatePath("/app", "layout");
+  return { ok: true, message: theme === "system" ? "Following your phone." : `${theme === "dark" ? "Dark" : "Light"} mode on.` };
+}
 
 function refresh() {
   revalidatePath("/app");

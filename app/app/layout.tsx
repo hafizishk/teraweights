@@ -1,28 +1,42 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { Viewport } from "next";
 import { Avatar } from "@/components/ui/Avatar";
-import { createClient } from "@/lib/supabase/server";
 import { getActivePackages } from "@/lib/queries/packages";
+import { getMyProfile, getMyUser } from "@/lib/queries/profile";
 import { BottomTabs } from "@/components/member/BottomTabs";
 import { HeaderPill } from "@/components/member/HeaderPill";
 import { Wordmark } from "@/components/ui/Wordmark";
 import { Toaster } from "@/components/ui/Toaster";
-import type { Profile } from "@/lib/types";
+
+const LIGHT = "#f4f1ec";
+const DARK = "#0b0b0b";
+
+/** Status bar colour follows the member's appearance choice. */
+export async function generateViewport(): Promise<Viewport> {
+  const profile = await getMyProfile();
+  const theme = profile?.theme ?? "dark";
+  return {
+    themeColor:
+      theme === "light"
+        ? LIGHT
+        : theme === "system"
+          ? [
+              { media: "(prefers-color-scheme: light)", color: LIGHT },
+              { media: "(prefers-color-scheme: dark)", color: DARK },
+            ]
+          : DARK,
+  };
+}
 
 export default async function MemberLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getMyUser();
   if (!user) redirect("/login?next=/app");
 
-  const [{ data: profile }, packages] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle<Profile>(),
-    getActivePackages(supabase, user.id),
-  ]);
+  const [profile, packages] = await Promise.all([getMyProfile(), getActivePackages(supabase, user.id)]);
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-[480px] flex-col bg-ink">
+    <div data-theme={profile?.theme ?? "dark"} className="mx-auto flex min-h-screen w-full max-w-[480px] flex-col bg-ink text-paper">
       <header className="safe-top sticky top-0 z-10 flex items-center justify-between border-b border-ink-3 bg-ink/95 px-4 py-3 backdrop-blur">
         <Wordmark className="text-xl" />
         <div className="flex items-center gap-3">

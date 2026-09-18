@@ -47,7 +47,7 @@ function ToastRow({ toast, onDone }: { toast: Toast; onDone: () => void }) {
     <div
       role={toast.tone === "error" ? "alert" : "status"}
       className={`pointer-events-auto rounded-md px-4 py-3 text-sm shadow-lg ${
-        toast.tone === "error" ? "bg-brand text-paper" : "bg-paper text-ink"
+        toast.tone === "error" ? "bg-brand text-on-brand" : "bg-paper text-ink"
       }`}
     >
       {toast.text}

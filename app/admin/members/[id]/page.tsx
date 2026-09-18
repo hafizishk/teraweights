@@ -161,7 +161,7 @@ export default async function AdminMemberPage({ params }: { params: Promise<{ id
                       {p.payment_status === "paid" ? (
                         <Badge>Paid</Badge>
                       ) : (
-                        <span className="inline-flex h-6 items-center rounded bg-brand px-2 text-xs font-medium text-paper">
+                        <span className="inline-flex h-6 items-center rounded bg-brand px-2 text-xs font-medium text-on-brand">
                           Pending
                         </span>
                       )}
