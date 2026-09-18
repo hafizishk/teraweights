@@ -98,6 +98,30 @@ export type MyBooking = {
 };
 
 /** The member's live bookings (booked, waitlisted or attended) in a date range. */
+/**
+ * The member's bookings for sessions inside a time range. Same shape as
+ * getMyBookings, but needs no session ids, so it can run alongside the
+ * session query instead of after it.
+ */
+export async function getMyBookingsBetween(
+  supabase: SupabaseClient,
+  memberId: string,
+  fromIso: string,
+  toIso: string,
+): Promise<Map<string, MyBooking>> {
+  const map = new Map<string, MyBooking>();
+  const { data } = await supabase
+    .from("bookings")
+    .select("id, session_id, status, entitlement, credits_used, checked_in_at, sessions!inner(starts_at)")
+    .eq("member_id", memberId)
+    .in("status", ["booked", "waitlisted", "attended"])
+    .gte("sessions.starts_at", fromIso)
+    .lt("sessions.starts_at", toIso);
+
+  for (const b of (data ?? []) as unknown as MyBooking[]) map.set(b.session_id, b);
+  return map;
+}
+
 export async function getMyBookings(
   supabase: SupabaseClient,
   memberId: string,

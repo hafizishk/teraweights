@@ -223,3 +223,10 @@ The brief put payments out of scope. After reviewing ClassPass, Stackform change
 
 - Supabase uses the **Confirm signup** template the first time an address signs in and **Magic Link** thereafter. Only Magic Link had been replaced, so a new address got the stock "Confirm your email address" link and no code. The same file now goes into both templates.
 - The link is `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email` instead of `{{ .ConfirmationURL }}`. The default is a PKCE code that only the browser that started the sign-in can redeem; from the native app, links open in the system browser and fail with "PKCE code verifier not found". A token hash is verified server-side in `/auth/callback`, which already handles it, so the link works from anywhere. In the app itself, the code is the path.
+
+## Latency: Singapore functions, two round trips per page
+
+- Vercel ran the app in its default region, Washington DC (`iad1` in the response headers), for members in Singapore. `vercel.json` pins functions to `sin1`. Middleware already ran at the edge; the page functions did not.
+- The You page made nine Supabase calls in sequence, each a full round trip: bookings, then the next session, then attendees, then the post, then coaches, then PT, then the coach, then the event. It now makes two batches. The next session's id and start time are already on the booking row, so nothing downstream had to wait for the session fetch.
+- Book fetched the profile, then the week, then its bookings by session id. `getMyBookingsBetween` filters bookings by the week's time range through the session join, so all six queries go out together.
+- `assertOnboarded(profile)` replaces `requireOnboarded` on pages that already load the profile, saving one query per page; the rule is unchanged.

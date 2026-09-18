@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { requireOnboarded } from "@/lib/onboarding";
+import { assertOnboarded } from "@/lib/onboarding";
 import { getActivePackages, getMemberPackages } from "@/lib/queries/packages";
 import { trialEligibility } from "@/lib/rules/trial";
 import { getMyBookings, getSession, getSessionCounts, getSessionsBetween } from "@/lib/queries/sessions";
@@ -56,31 +56,33 @@ export default async function YouPage() {
     data: { user },
   } = await supabase.auth.getUser();
   const uid = user!.id;
-  await requireOnboarded(supabase, uid);
   const now = new Date();
   const week = weekOf(now);
 
-  const [{ data: profile }, packages, allPackages, pulse, weekSessions, weekCounts] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", uid).maybeSingle<Profile>(),
-    getActivePackages(supabase, uid),
-    getMemberPackages(supabase, uid),
-    getCommunityPulse(supabase),
-    getSessionsBetween(supabase, week.startIso, week.endIso),
-    getSessionCounts(supabase, week.startIso, week.endIso),
-  ]);
+  // Round trip one: everything that depends only on who is signed in.
+  const [{ data: profile }, packages, allPackages, pulse, weekSessions, weekCounts, { data: bookingRows }] =
+    await Promise.all([
+      supabase.from("profiles").select("*").eq("id", uid).maybeSingle<Profile>(),
+      getActivePackages(supabase, uid),
+      getMemberPackages(supabase, uid),
+      getCommunityPulse(supabase),
+      getSessionsBetween(supabase, week.startIso, week.endIso),
+      getSessionCounts(supabase, week.startIso, week.endIso),
+      supabase
+        .from("bookings")
+        .select("id, status, credits_used, session_id, sessions(starts_at)")
+        .eq("member_id", uid)
+        .in("status", ["booked", "attended"]),
+    ]);
+  assertOnboarded(profile);
+
   const hasPro = packages.some((p) => p.tier === "pro");
   const trial = trialEligibility(allPackages, now);
   const stage = memberStage(allPackages, now);
   const canBook = packages.some((p) => p.kind !== "pt");
 
   // The member's live bookings: the next one is the hero, attended ones feed the streak.
-  const { data: bookingRows } = await supabase
-    .from("bookings")
-    .select("id, status, credits_used, session_id, sessions(starts_at)")
-    .eq("member_id", uid)
-    .in("status", ["booked", "attended"]);
   const bookings = ((bookingRows ?? []) as unknown as BookingJoin[]).filter((b) => b.sessions);
-
   const upcoming = bookings
     .filter((b) => b.status === "booked" && new Date(b.sessions!.starts_at) > now)
     .sort((a, b) => new Date(a.sessions!.starts_at).getTime() - new Date(b.sessions!.starts_at).getTime())[0];
@@ -89,34 +91,71 @@ export default async function YouPage() {
   const streakWeeks = attendanceStreakWeeks(attendedAt, now);
   const trainedThisWeek = sessionsThisWeek(attendedAt, now);
 
-  const nextSession = upcoming ? await getSession(supabase, upcoming.session_id) : null;
-
-  // Sessions still to come this week, the next booked one included.
+  // Sessions still to come this week, the next booked one included. The next
+  // session's id and start are already known from the booking row, so every
+  // remaining query can go out at once.
   const remaining = weekSessions.filter((s) => new Date(s.starts_at) > now && s.status === "scheduled");
   const listIds = remaining.map((s) => s.id);
-  const attendeeIds = nextSession ? Array.from(new Set([nextSession.id, ...listIds])) : listIds;
+  const attendeeIds = upcoming ? Array.from(new Set([upcoming.session_id, ...listIds])) : listIds;
+  const nextOutsideWeek = upcoming && !weekCounts.has(upcoming.session_id) ? upcoming.sessions!.starts_at : null;
+  const audiences = ["all", ...(profile?.zone_pref ? [profile.zone_pref] : []), ...(hasPro ? ["prime"] : [])];
+  const ptPack = activePtPack(allPackages, now);
 
-  const [attendees, myWeekBookings] = await Promise.all([
-    getAttendees(supabase, attendeeIds),
-    getMyBookings(supabase, uid, listIds),
-  ]);
+  // Round trip two.
+  const [nextSession, nextCounts, attendees, myWeekBookings, { data: announcement }, coaches, results, ptSessions, { data: coach }, { data: event }] =
+    await Promise.all([
+      upcoming ? getSession(supabase, upcoming.session_id) : Promise.resolve(null),
+      nextOutsideWeek
+        ? getSessionCounts(supabase, nextOutsideWeek, new Date(new Date(nextOutsideWeek).getTime() + 1).toISOString())
+        : Promise.resolve(weekCounts),
+      getAttendees(supabase, attendeeIds),
+      getMyBookings(supabase, uid, listIds),
+      supabase
+        .from("announcements")
+        .select("id, slug, title, body, audience, published_at, author:profiles!announcements_created_by_fkey(full_name, role)")
+        .in("audience", audiences)
+        .is("archived_at", null)
+        .not("published_at", "is", null)
+        .lte("published_at", now.toISOString())
+        .order("published_at", { ascending: false })
+        .limit(1)
+        .maybeSingle<AnnouncementJoin>(),
+      getCoaches(supabase, now),
+      getMyResults(supabase, uid),
+      ptPack ? getMyPtSessions(supabase, uid) : Promise.resolve([]),
+      supabase
+        .from("coach_assignments")
+        .select("id, coach:profiles!coach_assignments_coach_id_fkey(full_name)")
+        .eq("member_id", uid)
+        .limit(1)
+        .maybeSingle<{ id: string; coach: { full_name: string | null } | null }>(),
+      supabase
+        .from("events")
+        .select("id, slug, name, type, event_date")
+        .gte("event_date", sgtDate(now))
+        .eq("registration_open", true)
+        .order("event_date", { ascending: true })
+        .limit(1)
+        .maybeSingle<{ id: string; slug: string; name: string; type: string; event_date: string }>(),
+    ]);
 
-  const nextView = nextSession
-    ? buildSessionView(
-        nextSession,
-        weekCounts.get(nextSession.id) ?? (await getSessionCounts(supabase, nextSession.starts_at, new Date(new Date(nextSession.starts_at).getTime() + 1).toISOString())).get(nextSession.id),
-        {
-          id: upcoming.id,
-          session_id: upcoming.session_id,
-          status: "booked",
-          entitlement: null,
-          credits_used: upcoming.credits_used,
-          checked_in_at: null,
-        },
-        packages,
-        now,
-      )
-    : null;
+  const nextView =
+    nextSession && upcoming
+      ? buildSessionView(
+          nextSession,
+          nextCounts.get(nextSession.id),
+          {
+            id: upcoming.id,
+            session_id: upcoming.session_id,
+            status: "booked",
+            entitlement: null,
+            credits_used: upcoming.credits_used,
+            checked_in_at: null,
+          },
+          packages,
+          now,
+        )
+      : null;
 
   const heroAttendees = nextSession ? (attendees.get(nextSession.id) ?? []) : [];
   const heroPeople = attendeePeople(heroAttendees, uid);
@@ -138,42 +177,8 @@ export default async function YouPage() {
       usual: isUsual(s.starts_at),
     }));
 
-  // Latest announcement for this member's audience, with its author.
-  const audiences = ["all", ...(profile?.zone_pref ? [profile.zone_pref] : []), ...(hasPro ? ["prime"] : [])];
-  const { data: announcement } = await supabase
-    .from("announcements")
-    .select("id, slug, title, body, audience, published_at, author:profiles!announcements_created_by_fkey(full_name, role)")
-    .in("audience", audiences)
-    .is("archived_at", null)
-    .not("published_at", "is", null)
-    .lte("published_at", now.toISOString())
-    .order("published_at", { ascending: false })
-    .limit(1)
-    .maybeSingle<AnnouncementJoin>();
-
-  const [coaches, results] = await Promise.all([getCoaches(supabase, now), getMyResults(supabase, uid)]);
   const pb = personalBest(results);
-  const ptPack = activePtPack(allPackages, now);
-  const ptSessions = ptPack ? await getMyPtSessions(supabase, uid) : [];
   const nextPt = ptSessions.filter((s) => s.status === "booked" && new Date(s.starts_at).getTime() > now.getTime()).pop() ?? null;
-
-  // Assigned coach, if any.
-  const { data: coach } = await supabase
-    .from("coach_assignments")
-    .select("id, coach:profiles!coach_assignments_coach_id_fkey(full_name)")
-    .eq("member_id", uid)
-    .limit(1)
-    .maybeSingle<{ id: string; coach: { full_name: string | null } | null }>();
-
-  // Next upcoming event, for the countdown tile.
-  const { data: event } = await supabase
-    .from("events")
-    .select("id, slug, name, type, event_date")
-    .gte("event_date", sgtDate(now))
-    .eq("registration_open", true)
-    .order("event_date", { ascending: true })
-    .limit(1)
-    .maybeSingle<{ id: string; slug: string; name: string; type: string; event_date: string }>();
 
   const daysToEvent = event
     ? Math.max(0, Math.round((sgtMidnight(event.event_date).getTime() - sgtMidnight(sgtDate(now)).getTime()) / 86_400_000))

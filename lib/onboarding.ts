@@ -10,6 +10,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * navigation. /app/onboarding and /app/checkin do not call it, so a scanned
  * QR still works for a brand-new member.
  */
+/**
+ * Same rule, no query: for pages that already fetch the profile, so the
+ * gate costs nothing extra.
+ */
+export function assertOnboarded(profile: { onboarded_at: string | null } | null | undefined): void {
+  if (profile && !profile.onboarded_at) redirect("/app/onboarding");
+}
+
 export async function requireOnboarded(supabase: SupabaseClient, userId: string): Promise<void> {
   const { data } = await supabase
     .from("profiles")

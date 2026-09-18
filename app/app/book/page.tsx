@@ -1,8 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
-import { requireOnboarded } from "@/lib/onboarding";
+import { assertOnboarded } from "@/lib/onboarding";
 import { getActivePackages, getMemberPackages } from "@/lib/queries/packages";
 import { trialEligibility } from "@/lib/rules/trial";
-import { getMyBookings, getSessionCounts, getSessionsBetween } from "@/lib/queries/sessions";
+import { getMyBookingsBetween, getSessionCounts, getSessionsBetween } from "@/lib/queries/sessions";
 import { buildSessionView } from "@/lib/view/session-view";
 import { weekOf } from "@/lib/week";
 import { BookWeek } from "@/components/member/BookWeek";
@@ -30,32 +30,27 @@ export default async function BookPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  await requireOnboarded(supabase, user!.id);
-
-  // No filter chosen: default to the member's zone (onboarding answer).
-  let filterKey = FILTERS.some((x) => x.key === f) ? f! : "";
-  if (!filterKey) {
-    const { data: profile } = await supabase.from("profiles").select("zone_pref").eq("id", user!.id).maybeSingle<{ zone_pref: string | null }>();
-    filterKey = profile?.zone_pref === "west" ? "west" : profile?.zone_pref === "east" ? "east" : "all";
-  }
-  const filterSlug = FILTERS.find((x) => x.key === filterKey)!.slug;
 
   const now = new Date();
   const week = weekOf(now, offset);
 
-  const [sessions, counts, packages, allPackages] = await Promise.all([
+  const [{ data: profile }, sessions, counts, packages, allPackages, bookings] = await Promise.all([
+    supabase.from("profiles").select("zone_pref, onboarded_at").eq("id", user!.id).maybeSingle<{ zone_pref: string | null; onboarded_at: string | null }>(),
     getSessionsBetween(supabase, week.startIso, week.endIso),
     getSessionCounts(supabase, week.startIso, week.endIso),
     getActivePackages(supabase, user!.id),
     getMemberPackages(supabase, user!.id),
+    getMyBookingsBetween(supabase, user!.id, week.startIso, week.endIso),
   ]);
+  assertOnboarded(profile);
   const trial = trialEligibility(allPackages, now);
 
-  const bookings = await getMyBookings(
-    supabase,
-    user!.id,
-    sessions.map((x) => x.id),
-  );
+  // No filter chosen: default to the member's zone (onboarding answer).
+  let filterKey = FILTERS.some((x) => x.key === f) ? f! : "";
+  if (!filterKey) {
+    filterKey = profile?.zone_pref === "west" ? "west" : profile?.zone_pref === "east" ? "east" : "all";
+  }
+  const filterSlug = FILTERS.find((x) => x.key === filterKey)!.slug;
 
   const views = sessions
     .filter((x) => !filterSlug || x.class_slug === filterSlug)
