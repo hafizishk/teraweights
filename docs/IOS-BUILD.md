@@ -98,6 +98,25 @@ As a last resort, register the ID by hand: developer.apple.com, Certificates
 Identifiers & Profiles, Identifiers, **+**, App IDs, App, Explicit,
 `sg.teraweights.app`, Register. Then re-run the build.
 
+## Android
+
+Same repo, same Codemagic app, second workflow. No Google account needed to
+build; the output is an `.apk` anyone can install directly and an `.aab` for
+Play Console later.
+
+One-time: **Personal Account**, **Code signing identities**, **Android
+keystores**, **Generate keystore** (or Upload). Reference name
+`teraweights_android`, any alias and passwords, keep the passwords somewhere
+safe. Codemagic stores it and exports it to the build.
+
+Each build: **Start new build**, workflow **Android APK and AAB**. The `.apk`
+and `.aab` are in the build's Artifacts panel. Send the `.apk` to the client;
+on the phone, open it, allow installs from that source when asked, install.
+
+Play Store later: create the app in Play Console, upload the `.aab` to
+Internal testing. Play App Signing wraps our key, so keep using the same
+keystore. Google's fee is a one-off US$25.
+
 ## Changing things
 
 - **The URL the app loads**: `APP_URL` in `codemagic.yaml`, and the default in `capacitor.config.ts`.

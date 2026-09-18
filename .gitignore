@@ -43,6 +43,8 @@ next-env.d.ts
 # keep the env template
 !.env.example
 
-# capacitor ios: generated from capacitor.config.ts by `npx cap add ios`,
-# on every Codemagic run and locally. Never committed.
+# capacitor native projects: generated from capacitor.config.ts by
+# `npx cap add ios` / `npx cap add android` on every Codemagic run and
+# locally. Never committed.
 /ios
+/android

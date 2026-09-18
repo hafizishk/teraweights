@@ -212,3 +212,9 @@ The brief put payments out of scope. After reviewing ClassPass, Stackform change
 
 - Build compiled, exported, uploaded and was processed by App Store Connect on 12 Sep 2026. The full signing chain is: `CERTIFICATE_PRIVATE_KEY` secure variable, `fetch-signing-files --create`, profile installed into both Xcode profile folders, explicit team, profile UUID and identity on the archive, export options written by plistlib with `method: app-store` (the CLI's enum, not Xcode's newer `app-store-connect`).
 - The build sets `ITSAppUsesNonExemptEncryption` to false in Info.plist so Apple's export compliance question is answered in the binary. The app only uses HTTPS, which is exempt. Without it every upload waits as "Missing Compliance" and the automatic TestFlight submission step fails after a successful upload.
+
+## Android build
+
+- Second Codemagic workflow, `android`, on the same free Mac minutes: `npx cap add android`, icons from the committed `assets/`, then Gradle `assembleRelease` and `bundleRelease` with the version code from Codemagic's build counter and the version name from `package.json`. Outputs a signed `.apk` for direct install and an `.aab` for Play Console.
+- Signing is a keystore generated in Codemagic's Code signing identities (reference `teraweights_android`); the build appends a second `android {}` block to the generated `build.gradle` reading the `CM_KEYSTORE_*` variables Codemagic exports, since Capacitor's template ships without release signing. Groovy merges repeated blocks, so the template is not edited in place.
+- `android/` joins `ios/` in `.gitignore`; both are regenerated from `capacitor.config.ts` every run.

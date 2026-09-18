@@ -1,6 +1,7 @@
-# Cloud iOS build. Produces a signed .ipa and uploads it to TestFlight.
-# Nothing here needs a Mac: Codemagic generates the Xcode project from
-# capacitor.config.ts on every run, so the ios/ folder is never committed.
+# Cloud builds. iOS: a signed .ipa uploaded to TestFlight. Android: a signed
+# .apk (install directly) and .aab (Play Console). Nothing here needs a Mac:
+# Codemagic generates the native projects from capacitor.config.ts on every
+# run, so the ios/ and android/ folders are never committed.
 #
 # One-time setup is in docs/IOS-BUILD.md.
 #
@@ -148,3 +149,77 @@ workflows:
         # testers are added in the browser afterwards, so there is no group to
         # create before the first build. Add a beta_groups list later to
         # distribute automatically.
+
+  android:
+    name: Android APK and AAB
+    instance_type: mac_mini_m2
+    max_build_duration: 45
+
+    environment:
+      node: 22
+      java: 21
+      # A keystore generated or uploaded in Codemagic, Personal Account >
+      # Code signing identities > Android keystores, reference name
+      # teraweights_android. Codemagic exports CM_KEYSTORE_PATH,
+      # CM_KEYSTORE_PASSWORD, CM_KEY_ALIAS and CM_KEY_PASSWORD from it.
+      android_signing:
+        - teraweights_android
+      vars:
+        APP_URL: "https://teraweights.vercel.app"
+
+    scripts:
+      - name: Install dependencies
+        script: npm ci
+
+      - name: Generate the Android project
+        script: |
+          if [ ! -d android ]; then npx cap add android; fi
+          npx cap sync android
+
+      - name: Icon and splash
+        script: |
+          npm install -D @capacitor/assets
+          npx capacitor-assets generate --android \
+            --iconBackgroundColor '#0b0b0b' \
+            --splashBackgroundColor '#0b0b0b'
+          npx cap sync android
+
+      # Capacitor's generated build.gradle has no release signing. Groovy
+      # merges repeated android {} blocks, so append one that reads the
+      # keystore Codemagic exported, rather than editing the template in place.
+      - name: Release signing config
+        script: |
+          python3 -c 'open("android/app/build.gradle","a").write("""
+
+          android {
+              signingConfigs {
+                  release {
+                      storeFile file(System.getenv("CM_KEYSTORE_PATH"))
+                      storePassword System.getenv("CM_KEYSTORE_PASSWORD")
+                      keyAlias System.getenv("CM_KEY_ALIAS")
+                      keyPassword System.getenv("CM_KEY_PASSWORD")
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                  }
+              }
+          }
+          """)'
+          tail -20 android/app/build.gradle
+
+      - name: Build APK and AAB
+        script: |
+          set -e
+          VERSION_NAME=$(node -p "require('./package.json').version")
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease bundleRelease \
+            -Pandroid.injected.version.code="$PROJECT_BUILD_NUMBER" \
+            -Pandroid.injected.version.name="$VERSION_NAME"
+          ls -la app/build/outputs/apk/release app/build/outputs/bundle/release
+
+    artifacts:
+      - android/app/build/outputs/apk/release/*.apk
+      - android/app/build/outputs/bundle/release/*.aab
